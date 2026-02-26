@@ -42,20 +42,18 @@
             </div>
 
             <div id="error-message" class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
-                帳號或密碼錯誤，請重新輸入。
-            </div>
+                </div>
 
             <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
                 登入
             </button>
         </form>
-
-        <div class="mt-4 text-center">
-            <a href="#" class="text-sm text-blue-500 hover:underline">忘記密碼？</a>
-        </div>
     </div>
 
     <script>
+        // ⚠️ 【重要檢查點】：請務必將這裡替換成您在 Google Apps Script 部署取得的「網頁應用程式網址」
+        const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
+
         // 1. 處理角色切換 UI
         function setRole(role) {
             document.getElementById('role').value = role;
@@ -86,82 +84,74 @@
             }
         }
 
-        // 請將這裡替換成您剛剛部署獲得的 API 網址
-const API_URL = "https://script.google.com/macros/s/AKfycbwBG1mN0Ys5G8WDXPNOMLLO_MGeCLx9Cpap1jXXvEePZQN34cpzIj44T2n-nY3X0S9VPg/exec";
+        // 3. 發送 API 請求的登入邏輯
+        async function handleLogin(event) {
+            event.preventDefault(); // 防止表單重新整理頁面
+            
+            const role = document.getElementById('role').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submit-btn');
 
-// 真正對接後端 API 的登入邏輯
-async function handleLogin(event) {
-    event.preventDefault(); // 防止表單預設的頁面跳轉
-    
-    const role = document.getElementById('role').value;
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const errorMsg = document.getElementById('error-message');
-    const submitBtn = document.getElementById('submit-btn');
+            // 初始化：隱藏錯誤訊息，按鈕顯示載入中
+            errorMsg.classList.add('hidden');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>登入驗證中...';
+            submitBtn.disabled = true;
 
-    // 隱藏錯誤訊息並將按鈕設為載入狀態
-    errorMsg.classList.add('hidden');
-    submitBtn.innerText = "登入驗證中...";
-    submitBtn.disabled = true;
+            try {
+                // 發送請求給 Google Sheets API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8', // 避免 CORS 問題
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        username: username,
+                        password: password
+                    })
+                });
 
-    try {
-        // 使用 fetch 向 Google Sheets API 發送請求
-        // 注意：為了避開瀏覽器的 CORS 限制，這裡使用 text/plain 發送 JSON 字串
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8',
-            },
-            body: JSON.stringify({
-                action: 'login',
-                username: username,
-                password: password
-            })
-        });
+                const result = await response.json();
 
-        // 解析後端回傳的 JSON 結果
-        const result = await response.json();
+                if (result.success) {
+                    // 檢查使用者選擇的登入身分，是否與資料庫紀錄的一致
+                    if (result.role !== role) {
+                        errorMsg.innerText = "登入失敗：您選擇的登入身分與系統紀錄不符。";
+                        errorMsg.classList.remove('hidden');
+                    } else {
+                        // 登入成功，儲存 Session 資料
+                        sessionStorage.setItem('isLoggedIn', 'true');
+                        sessionStorage.setItem('userRole', result.role);
+                        sessionStorage.setItem('username', username);
+                        
+                        if (result.role === 'parent' && result.studentId) {
+                            sessionStorage.setItem('studentId', result.studentId);
+                        }
 
-        if (result.success) {
-            // 系統安全檢查：確保選擇的角色與資料庫紀錄相符
-            if (result.role !== role) {
-                errorMsg.innerText = "登入失敗：您選擇的登入身分與系統紀錄不符。";
-                errorMsg.classList.remove('hidden');
-            } else {
-                // 登入成功！將資訊存入瀏覽器 Session
-                sessionStorage.setItem('isLoggedIn', 'true');
-                sessionStorage.setItem('userRole', result.role);
-                sessionStorage.setItem('username', username);
-                
-                // 如果是家長，把綁定的學號存起來，這對後續撈取報表極度重要！
-                if (result.role === 'parent' && result.studentId) {
-                    sessionStorage.setItem('studentId', result.studentId);
-                }
-
-                alert(`登入成功！歡迎進入系統。`);
-                
-                // 執行頁面跳轉
-                if (role === 'teacher') {
-                    window.location.href = 'teacher.html';
+                        // 導向對應的系統頁面
+                        if (role === 'teacher') {
+                            window.location.href = 'teacher.html';
+                        } else {
+                            window.location.href = 'parent.html';
+                        }
+                    }
                 } else {
-                    window.location.href = 'parent.html';
+                    // 密碼或帳號錯誤
+                    errorMsg.innerText = result.message || "帳號或密碼錯誤，請重新輸入。";
+                    errorMsg.classList.remove('hidden');
                 }
+            } catch (error) {
+                console.error('API 請求失敗:', error);
+                errorMsg.innerText = "系統連線異常，請確認 API_URL 網址是否正確，或稍後再試。";
+                errorMsg.classList.remove('hidden');
+            } finally {
+                // 恢復按鈕狀態
+                submitBtn.innerText = "登入";
+                submitBtn.disabled = false;
             }
-        } else {
-            // 密碼錯誤或找不到帳號
-            errorMsg.innerText = result.message || "帳號或密碼錯誤，請重新輸入。";
-            errorMsg.classList.remove('hidden');
         }
-    } catch (error) {
-        console.error('API 請求失敗:', error);
-        errorMsg.innerText = "系統連線異常，請稍後再試。";
-        errorMsg.classList.remove('hidden');
-    } finally {
-        // 恢復按鈕狀態
-        submitBtn.innerText = "登入";
-        submitBtn.disabled = false;
-    }
-}
     </script>
 </body>
 </html>

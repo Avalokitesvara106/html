@@ -118,8 +118,12 @@
 
     <script>
         // 1. 請填入您剛剛部署的 Google Apps Script API 網址
-const API_URL = "https://script.google.com/macros/s/AKfycbwBG1mN0Ys5G8WDXPNOMLLO_MGeCLx9Cpap1jXXvEePZQN34cpzIj44T2n-nY3X0S9VPg/exec";
-
+const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
+// 🛡️ 新增：安全防護檢查 (確保只有老師可以進入此頁面)
+if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'teacher') {
+    alert('權限不足，請先以老師身分登入！');
+    window.location.href = 'login.html';
+}
 // 設定今日日期為預設值
 document.getElementById('datePicker').valueAsDate = new Date();
 
