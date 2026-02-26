@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>老師控制台 - 上課狀況與成績管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* 自訂：當輸入框被禁用(鎖定)時的樣式 */
+        input:disabled, select:disabled {
+            background-color: transparent;
+            border-color: transparent;
+            color: #374151;
+            cursor: default;
+            appearance: none; /* 隱藏下拉選單箭頭 */
+        }
+        input:disabled:focus, select:disabled:focus {
+            outline: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden font-sans">
+
+    <aside class="w-64 bg-gray-800 text-white flex flex-col hidden md:flex">
+        <div class="p-6 text-center border-b border-gray-700">
+            <h2 class="text-2xl font-bold text-blue-400">系統管理</h2>
+            <p class="text-sm text-gray-400 mt-2">老師控制台</p>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="#" class="block px-4 py-2 bg-blue-600 rounded-lg text-white font-medium">
+                <i class="fas fa-edit mr-2"></i> 登記狀況與成績
+            </a>
+            <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-users mr-2"></i> 學生名單管理
+            </a>
+            <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-history mr-2"></i> 歷史紀錄查詢
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-700">
+            <div class="flex items-center mb-4">
+                <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+                    <i class="fas fa-chalkboard-teacher text-white"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium">王大明 老師</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full py-2 text-sm text-red-400 border border-red-400 rounded hover:bg-red-400 hover:text-white transition">
+                登出系統
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center md:hidden">
+            <h1 class="text-xl font-bold text-gray-800">登記狀況與成績</h1>
+            <button class="text-gray-600 focus:outline-none"><i class="fas fa-bars text-xl"></i></button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+            <h1 class="text-2xl font-bold text-gray-800 hidden md:block mb-6">📝 登記上課狀況與成績</h1>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
+                        <input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">班級 / 課程</label>
+                            <select id="courseSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+                                <option value="數學">三年二班 - 數學</option>
+                                <option value="英文">三年二班 - 英文</option>
+                            </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">考試名稱 (選填)</label>
+                        <input type="text" placeholder="例如：第一單元小考" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <button class="w-full bg-blue-100 text-blue-700 font-medium py-2 rounded-lg hover:bg-blue-200 transition">
+                            載入學生名單
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="p-4 text-sm font-semibold text-gray-600">學號</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600">姓名</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600 w-32">出席狀態</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600 w-1/3">上課狀況評語</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600 w-24">考試成績</th>
+                                <th class="p-4 text-sm font-semibold text-gray-600 text-center w-32">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody" class="divide-y divide-gray-100">
+                            </tbody>
+                    </table>
+                </div>
+                
+                <div class="bg-gray-50 p-4 border-t border-gray-200 flex justify-end">
+                    <button onclick="batchSave()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center">
+                        <i class="fas fa-save mr-2"></i> 全班一鍵儲存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 1. 請填入您剛剛部署的 Google Apps Script API 網址
+const API_URL = "https://script.google.com/macros/s/AKfycbwBG1mN0Ys5G8WDXPNOMLLO_MGeCLx9Cpap1jXXvEePZQN34cpzIj44T2n-nY3X0S9VPg/exec";
+
+// 設定今日日期為預設值
+document.getElementById('datePicker').valueAsDate = new Date();
+
+// 模擬學生名單 (實務上這裡也會寫一個 API 去跟後端要名單，目前先用預設值)
+const mockData = [
+    { id: 1, studentId: '112001', name: '林小明', attendance: 'present', comment: '上課非常專心，舉手發言踴躍。', score: 95, isSaved: true },
+    { id: 2, studentId: '112002', name: '陳美玲', attendance: 'late', comment: '遲到10分鐘，但後續表現良好。', score: 82, isSaved: true },
+    { id: 3, studentId: '112003', name: '張建國', attendance: 'present', comment: '', score: '', isSaved: false }, 
+];
+
+// 渲染表格 (加入按鈕 ID 以便控制讀取狀態)
+function renderTable() {
+    const tbody = document.getElementById('studentTableBody');
+    tbody.innerHTML = '';
+
+    mockData.forEach((student, index) => {
+        const disabledAttr = student.isSaved ? 'disabled' : '';
+        const rowClass = student.isSaved ? 'bg-gray-50' : 'bg-white';
+        
+        const actionButton = student.isSaved 
+            ? `<button onclick="toggleEdit(${index})" class="text-gray-500 hover:text-blue-600 px-3 py-1 border border-transparent hover:border-blue-200 rounded transition"><i class="fas fa-pencil-alt"></i> 修改</button>`
+            : `<button id="save-btn-${index}" onclick="saveRow(${index})" class="text-green-600 hover:text-green-700 px-3 py-1 bg-green-50 border border-green-200 rounded transition font-medium"><i class="fas fa-check"></i> 儲存</button>`;
+
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-blue-50 transition ${rowClass}`;
+        tr.innerHTML = `
+            <td class="p-4 text-sm text-gray-700">${student.studentId}</td>
+            <td class="p-4 text-sm font-medium text-gray-900">${student.name}</td>
+            <td class="p-4">
+                <select id="att-${index}" class="w-full border border-gray-300 rounded p-1 text-sm focus:border-blue-500" ${disabledAttr}>
+                    <option value="present" ${student.attendance === 'present' ? 'selected' : ''}>✅ 正常</option>
+                    <option value="late" ${student.attendance === 'late' ? 'selected' : ''}>⚠️ 遲到</option>
+                    <option value="absent" ${student.attendance === 'absent' ? 'selected' : ''}>❌ 缺席</option>
+                </select>
+            </td>
+            <td class="p-4">
+                <input type="text" id="com-${index}" value="${student.comment}" placeholder="輸入評語..." class="w-full border border-gray-300 rounded p-1 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" ${disabledAttr}>
+            </td>
+            <td class="p-4">
+                <input type="number" id="sco-${index}" value="${student.score}" placeholder="分數" min="0" max="100" class="w-full border border-gray-300 rounded p-1 text-sm text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500" ${disabledAttr}>
+            </td>
+            <td class="p-4 text-center">
+                ${actionButton}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function toggleEdit(index) {
+    mockData[index].isSaved = false;
+    renderTable(); 
+}
+
+// 🔥 真正的儲存邏輯：發送資料到 Google Sheets
+async function saveRow(index) {
+    // 1. 抓取畫面上輸入的值與外部條件 (日期、課程)
+    const attendance = document.getElementById(`att-${index}`).value;
+    const comment = document.getElementById(`com-${index}`).value;
+    const score = document.getElementById(`sco-${index}`).value;
+    const date = document.getElementById('datePicker').value;
+    const course = document.getElementById('courseSelect').value;
+    const student = mockData[index];
+
+    // 2. 改變按鈕狀態為「儲存中」防止重複點擊
+    const saveBtn = document.getElementById(`save-btn-${index}`);
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中`;
+    saveBtn.disabled = true;
+
+    // 3. 組合要發送給 API 的 JSON 資料結構
+    const payload = {
+        action: 'saveRecord',
+        recordData: {
+            date: date,
+            course: course,
+            studentId: student.studentId,
+            name: student.name,
+            attendance: attendance,
+            comment: comment,
+            score: score
+        }
+    };
+
+    try {
+        // 4. 發送請求到 Google Apps Script
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // 寫入試算表成功！更新前端畫面狀態為鎖定
+            mockData[index].attendance = attendance;
+            mockData[index].comment = comment;
+            mockData[index].score = score;
+            mockData[index].isSaved = true;
+
+            renderTable(); // 重新渲染成唯讀灰色背景
+            
+            // 顯示成功提示
+            alert(`✅ ${student.name} 的紀錄已成功寫入 Google 試算表！`);
+        } else {
+            alert('❌ 儲存失敗：' + result.message);
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('API 連線錯誤:', error);
+        alert('連線失敗，請檢查網路狀態或確認 API 網址是否正確。');
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    }
+}
+
+// 全班一鍵儲存功能 (批次呼叫)
+async function batchSave() {
+    const unsavedIndexes = [];
+    mockData.forEach((student, index) => {
+        if (!student.isSaved) unsavedIndexes.push(index);
+    });
+
+    if (unsavedIndexes.length === 0) {
+        alert('目前沒有需要儲存的資料！');
+        return;
+    }
+
+    // 依序執行儲存動作
+    for (let index of unsavedIndexes) {
+        await saveRow(index);
+    }
+    alert('🎉 全班紀錄已成功批次寫入試算表！');
+}
+
+function logout() {
+    sessionStorage.clear(); // 清除登入狀態
+    alert("已登出系統！");
+    window.location.href = 'login.html'; // 導回登入頁
+}
+
+// 初始載入渲染
+renderTable();
+    </script>
+</body>
+</html>
