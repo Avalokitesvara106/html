@@ -53,7 +53,7 @@
     <script>
         // ⚠️ 【重要檢查點】：請務必將這裡替換成您在 Google Apps Script 部署取得的「網頁應用程式網址」
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
-
+                         
         // 1. 處理角色切換 UI
         function setRole(role) {
             document.getElementById('role').value = role;
@@ -125,7 +125,13 @@
                         sessionStorage.setItem('isLoggedIn', 'true');
                         sessionStorage.setItem('userRole', result.role);
                         sessionStorage.setItem('username', username);
-                        
+                        // 如果是老師，把任教班級和科目存入 Session，供 teacher.html 產生下拉選單
+                            if (result.role === 'teacher') {
+                                sessionStorage.setItem('teacherClasses', JSON.stringify(result.classes || []));
+                                sessionStorage.setItem('teacherSubjects', JSON.stringify(result.subjects || []));
+                            }
+
+
                         if (result.role === 'parent' && result.studentId) {
                             sessionStorage.setItem('studentId', result.studentId);
                         }
