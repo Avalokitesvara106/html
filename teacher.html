@@ -82,9 +82,9 @@
                         <input type="text" placeholder="例如：第一單元小考" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <button class="w-full bg-blue-100 text-blue-700 font-medium py-2 rounded-lg hover:bg-blue-200 transition">
-                            載入學生名單
-                        </button>
+                        <button id="load-students-btn" onclick="loadStudentList()" class="w-full bg-blue-100 text-blue-700 font-medium py-2 rounded-lg hover:bg-blue-200 transition">
+    														<i class="fas fa-download mr-1"></i> 載入學生名單
+												</button>
                     </div>
                 </div>
             </div>
@@ -118,28 +118,71 @@
 
     <script>
         // 1. 請填入您剛剛部署的 Google Apps Script API 網址
-const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwBG1mN0Ys5G8WDXPNOMLLO_MGeCLx9Cpap1jXXvEePZQN34cpzIj44T2n-nY3X0S9VPg/exec";
+
 // 🛡️ 新增：安全防護檢查 (確保只有老師可以進入此頁面)
 if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'teacher') {
     alert('權限不足，請先以老師身分登入！');
     window.location.href = 'login.html';
 }
+
 // 設定今日日期為預設值
 document.getElementById('datePicker').valueAsDate = new Date();
 
 // 模擬學生名單 (實務上這裡也會寫一個 API 去跟後端要名單，目前先用預設值)
-const mockData = [
-    { id: 1, studentId: '112001', name: '林小明', attendance: 'present', comment: '上課非常專心，舉手發言踴躍。', score: 95, isSaved: true },
-    { id: 2, studentId: '112002', name: '陳美玲', attendance: 'late', comment: '遲到10分鐘，但後續表現良好。', score: 82, isSaved: true },
-    { id: 3, studentId: '112003', name: '張建國', attendance: 'present', comment: '', score: '', isSaved: false }, 
-];
+let studentData = [];
+
+// 🔥 新增：動態載入學生名單 API 邏輯
+async function loadStudentList() {
+    const loadBtn = document.getElementById('load-students-btn');
+    const originalText = loadBtn.innerHTML;
+    
+    // 改變按鈕狀態為載入中
+    loadBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> 載入中...`;
+    loadBtn.disabled = true;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'getStudents' })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // 將後端傳來的純名單，轉換為表格需要的資料結構
+            studentData = result.data.map((student, index) => ({
+                id: index,
+                studentId: student.studentId,
+                name: student.name,
+                attendance: 'present', // 預設全部正常出席
+                comment: '',
+                score: '',
+                isSaved: false // 預設為尚未儲存
+            }));
+            
+            renderTable(); // 重新畫出表格
+            
+        } else {
+            alert('❌ 載入失敗：' + result.message);
+        }
+    } catch (error) {
+        console.error('API 連線錯誤:', error);
+        alert('系統連線異常，無法載入名單。');
+    } finally {
+        // 恢復按鈕狀態
+        loadBtn.innerHTML = originalText;
+        loadBtn.disabled = false;
+    }
+}
 
 // 渲染表格 (加入按鈕 ID 以便控制讀取狀態)
 function renderTable() {
     const tbody = document.getElementById('studentTableBody');
     tbody.innerHTML = '';
 
-    mockData.forEach((student, index) => {
+    studentData.forEach((student, index) => {
         const disabledAttr = student.isSaved ? 'disabled' : '';
         const rowClass = student.isSaved ? 'bg-gray-50' : 'bg-white';
         
@@ -174,7 +217,7 @@ function renderTable() {
 }
 
 function toggleEdit(index) {
-    mockData[index].isSaved = false;
+    studentData[index].isSaved = false;
     renderTable(); 
 }
 
@@ -186,7 +229,7 @@ async function saveRow(index) {
     const score = document.getElementById(`sco-${index}`).value;
     const date = document.getElementById('datePicker').value;
     const course = document.getElementById('courseSelect').value;
-    const student = mockData[index];
+    const student = studentData[index];
 
     // 2. 改變按鈕狀態為「儲存中」防止重複點擊
     const saveBtn = document.getElementById(`save-btn-${index}`);
@@ -220,10 +263,10 @@ async function saveRow(index) {
 
         if (result.success) {
             // 寫入試算表成功！更新前端畫面狀態為鎖定
-            mockData[index].attendance = attendance;
-            mockData[index].comment = comment;
-            mockData[index].score = score;
-            mockData[index].isSaved = true;
+            studentData[index].attendance = attendance;
+            studentData[index].comment = comment;
+            studentData[index].score = score;
+            studentData[index].isSaved = true;
 
             renderTable(); // 重新渲染成唯讀灰色背景
             
@@ -245,7 +288,7 @@ async function saveRow(index) {
 // 全班一鍵儲存功能 (批次呼叫)
 async function batchSave() {
     const unsavedIndexes = [];
-    mockData.forEach((student, index) => {
+    studentData.forEach((student, index) => {
         if (!student.isSaved) unsavedIndexes.push(index);
     });
 
@@ -266,9 +309,7 @@ function logout() {
     alert("已登出系統！");
     window.location.href = 'login.html'; // 導回登入頁
 }
-
-// 初始載入渲染
-renderTable();
+
     </script>
 </body>
 </html>
