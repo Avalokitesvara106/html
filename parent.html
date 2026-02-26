@@ -44,7 +44,7 @@
         <section id="view-daily" class="block">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-gray-700">選擇查詢日期</h3>
-                <input type="date" id="daily-date" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="date" id="daily-date" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
             </div>
 
             <div id="daily-content-container">
@@ -52,28 +52,33 @@
                     <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i><p class="mt-2">資料載入中...</p>
                 </div>
                 
+                <div id="submission-section" class="mb-6"></div>
+
                 <div id="attendance-section" class="mb-6"></div>
 
                 <div id="score-section" class="mb-6"></div>
                 
                 <div id="no-data-msg" class="hidden bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500 mt-4">
                     <i class="fas fa-box-open text-3xl mb-2 text-gray-300"></i>
-                    <p>本日無上課或成績紀錄</p>
+                    <p>本日無各項紀錄</p>
                 </div>
             </div>
         </section>
 
         <section id="view-weekly" class="hidden">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4 mt-2">
                 <p class="text-sm font-bold text-gray-700 mb-4"><i class="fas fa-chart-line text-blue-500 mr-2"></i>近期學習表現</p>
                 <canvas id="gradeChart" width="400" height="250"></canvas>
+            </div>
+            <div class="bg-blue-50 rounded-xl border border-blue-100 p-4 text-sm text-blue-800">
+                <p><i class="fas fa-info-circle mr-2"></i> 上圖為學生近期綜合表現趨勢圖，供家長參考學習波動。</p>
             </div>
         </section>
 
     </main>
 
     <script>
-        // 🚨 請確認這裡的網址與您 login.html 裡面的一模一樣
+        // 🚨 這裡已經為您填入正確的 API 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
 
         // 安全檢查
@@ -94,7 +99,7 @@
             fetchDailyData(dateInput.value); // 第一次載入
         });
 
-        // 標籤切換
+        // 🟢 標籤切換邏輯 (已修復加回)
         function switchTab(tab) {
             document.getElementById('view-daily').classList.toggle('hidden', tab !== 'daily');
             document.getElementById('view-weekly').classList.toggle('hidden', tab !== 'weekly');
@@ -107,14 +112,14 @@
                 ? "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold text-sm transition-all" 
                 : "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold text-sm transition-all";
             
+            // 如果切換到一週視角，則觸發繪製圖表
             if (tab === 'weekly') renderChart();
         }
 
-        // 🔥 核心功能：向 Google Sheets 抓取雙軌報表
+        // 核心功能：向 Google Sheets 抓取報表
         async function fetchDailyData(targetDate) {
             document.getElementById('loading-msg').classList.remove('hidden');
-            document.getElementById('attendance-section').innerHTML = '';
-            document.getElementById('score-section').innerHTML = '';
+            ['attendance-section', 'score-section', 'submission-section'].forEach(id => document.getElementById(id).innerHTML = '');
             document.getElementById('no-data-msg').classList.add('hidden');
 
             try {
@@ -128,51 +133,66 @@
                 document.getElementById('loading-msg').classList.add('hidden');
 
                 if (result.success) {
-                    const hasAttendance = result.attendance && result.attendance.length > 0;
-                    const hasScores = result.scores && result.scores.length > 0;
+                    const hasAtt = result.attendance && result.attendance.length > 0;
+                    const hasSco = result.scores && result.scores.length > 0;
+                    const hasSub = result.submissions && result.submissions.length > 0;
 
-                    if (!hasAttendance && !hasScores) {
+                    if (!hasAtt && !hasSco && !hasSub) {
                         document.getElementById('no-data-msg').classList.remove('hidden');
                         return;
                     }
 
-                    // 1. 渲染出缺席與評語
-                    if (hasAttendance) {
-                        let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1"><i class="fas fa-user-check mr-2"></i>上課狀況與評語</h4>`;
-                        result.attendance.forEach(record => {
-                            let statusColor, statusIcon, statusText;
-                            if (record.attendance === 'present') { statusColor = 'bg-green-100 text-green-700'; statusIcon = 'fa-check-circle'; statusText = '正常出席'; } 
-                            else if (record.attendance === 'late') { statusColor = 'bg-yellow-100 text-yellow-700'; statusIcon = 'fa-exclamation-circle'; statusText = '遲到'; } 
-                            else { statusColor = 'bg-red-100 text-red-700'; statusIcon = 'fa-times-circle'; statusText = '缺席'; }
+                    // 1. 渲染繳交事項
+                    if (hasSub) {
+                        let html = `<h4 class="text-sm font-bold text-indigo-500 mb-2 border-b pb-1"><i class="fas fa-clipboard-list mr-2"></i>行政 / 物品繳交追蹤</h4>`;
+                        result.submissions.forEach(rec => {
+                            let sColor, sIcon, sText;
+                            if (rec.status === 'done') { sColor = 'bg-green-100 text-green-700'; sIcon = 'fa-check-circle'; sText = '已完成'; } 
+                            else if (rec.status === 'pending') { sColor = 'bg-yellow-100 text-yellow-700'; sIcon = 'fa-exclamation-triangle'; sText = '未完成'; } 
+                            else { sColor = 'bg-red-100 text-red-700'; sIcon = 'fa-times-circle'; sText = '缺交'; }
 
+                            html += `
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center border-l-4 border-indigo-400">
+                                <h4 class="font-bold text-gray-800">${rec.itemName}</h4>
+                                <span class="${sColor} text-xs font-bold px-2 py-1 rounded-full"><i class="fas ${sIcon} mr-1"></i>${sText}</span>
+                            </div>`;
+                        });
+                        document.getElementById('submission-section').innerHTML = html;
+                    }
+
+                    // 2. 渲染出缺席與評語
+                    if (hasAtt) {
+                        let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-user-check mr-2"></i>上課狀況與評語</h4>`;
+                        result.attendance.forEach(rec => {
+                            let sColor = rec.attendance === 'present' ? 'bg-green-100 text-green-700' : (rec.attendance === 'late' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
+                            let sText = rec.attendance === 'present' ? '正常出席' : (rec.attendance === 'late' ? '遲到' : '缺席');
                             html += `
                             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3">
                                 <div class="flex justify-between items-center mb-2">
-                                    <h4 class="font-bold text-gray-800 text-lg">${record.course}</h4>
-                                    <span class="${statusColor} text-xs font-bold px-2 py-1 rounded-full"><i class="fas ${statusIcon} mr-1"></i>${statusText}</span>
+                                    <h4 class="font-bold text-gray-800 text-lg">${rec.course}</h4>
+                                    <span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span>
                                 </div>
                                 <div class="bg-gray-50 rounded p-3">
-                                    <p class="text-xs text-gray-500 mb-1">老師評語</p>
-                                    <p class="text-sm text-gray-700">${record.comment || '無評語'}</p>
+                                    <p class="text-sm text-gray-700">${rec.comment || '無評語'}</p>
                                 </div>
                             </div>`;
                         });
                         document.getElementById('attendance-section').innerHTML = html;
                     }
 
-                    // 2. 渲染考試成績
-                    if (hasScores) {
+                    // 3. 渲染考試成績
+                    if (hasSco) {
                         let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-marker mr-2"></i>測驗成績</h4>`;
-                        result.scores.forEach(record => {
+                        result.scores.forEach(rec => {
                             html += `
                             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center">
                                 <div>
-                                    <span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">${record.course}</span>
-                                    <h4 class="font-bold text-gray-800 mt-2">${record.examName}</h4>
+                                    <span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">${rec.course}</span>
+                                    <h4 class="font-bold text-gray-800 mt-2">${rec.examName}</h4>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-xs text-gray-500">測驗得分</p>
-                                    <p class="text-3xl font-black text-blue-600">${record.score}</p>
+                                    <p class="text-xs text-gray-500">得分</p>
+                                    <p class="text-3xl font-black text-blue-600">${rec.score}</p>
                                 </div>
                             </div>`;
                         });
@@ -187,7 +207,7 @@
             }
         }
 
-        // 假資料圖表繪製
+        // 🟢 假資料圖表繪製 (已修復加回)
         let chartInstance = null;
         function renderChart() {
             if (chartInstance) return; 

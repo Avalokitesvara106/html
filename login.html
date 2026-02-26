@@ -3,159 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系統登入 - 上課狀況與成績管理系統</title>
+    <title>系統登入 - 校務行政管理系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
-
     <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        
         <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-gray-800">上課狀況與成績管理系統</h1>
+            <h1 class="text-2xl font-bold text-gray-800">校務行政管理系統</h1>
             <p class="text-gray-500 mt-2">請登入以繼續</p>
         </div>
 
-        <div class="flex mb-6 bg-gray-200 rounded-lg p-1">
-            <button id="tab-teacher" onclick="setRole('teacher')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all">
-                老師登入
-            </button>
-            <button id="tab-parent" onclick="setRole('parent')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">
-                家長登入
-            </button>
+        <div class="flex mb-6 bg-gray-200 rounded-lg p-1 text-sm">
+            <button id="tab-teacher" onclick="setRole('teacher')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all">老師</button>
+            <button id="tab-parent" onclick="setRole('parent')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">家長</button>
+            <button id="tab-cadre" onclick="setRole('cadre')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">班級幹部</button>
         </div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
             <input type="hidden" id="role" value="teacher">
-
             <div class="mb-4">
-                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">帳號</label>
-                <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="請輸入帳號" required>
+                <label class="block text-gray-700 text-sm font-bold mb-2">帳號</label>
+                <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required>
             </div>
-
             <div class="mb-6 relative">
-                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">密碼</label>
-                <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="請輸入密碼" required>
+                <label class="block text-gray-700 text-sm font-bold mb-2">密碼</label>
+                <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required>
                 <button type="button" onclick="togglePassword()" class="absolute right-3 top-9 text-gray-400 hover:text-gray-600">
                     <i id="eye-icon" class="fas fa-eye"></i>
                 </button>
             </div>
-
-            <div id="error-message" class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
-                </div>
-
-            <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
-                登入
-            </button>
+            <div id="error-message" class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center"></div>
+            <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">登入</button>
         </form>
     </div>
 
     <script>
-        // ⚠️ 【重要檢查點】：請務必將這裡替換成您在 Google Apps Script 部署取得的「網頁應用程式網址」
+        // 🚨 請替換成您的 API 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
-                         
-        // 1. 處理角色切換 UI
+
         function setRole(role) {
             document.getElementById('role').value = role;
-            const tabTeacher = document.getElementById('tab-teacher');
-            const tabParent = document.getElementById('tab-parent');
-
-            if (role === 'teacher') {
-                tabTeacher.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all";
-                tabParent.className = "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all";
-            } else {
-                tabParent.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all";
-                tabTeacher.className = "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all";
-            }
+            ['teacher', 'parent', 'cadre'].forEach(r => {
+                let tab = document.getElementById('tab-' + r);
+                if (r === role) {
+                    tab.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all";
+                } else {
+                    tab.className = "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all";
+                }
+            });
         }
 
-        // 2. 處理密碼顯示與隱藏
         function togglePassword() {
             const pwdInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eye-icon');
-            if (pwdInput.type === 'password') {
-                pwdInput.type = 'text';
-                eyeIcon.classList.remove('fa-eye');
-                eyeIcon.classList.add('fa-eye-slash');
-            } else {
-                pwdInput.type = 'password';
-                eyeIcon.classList.remove('fa-eye-slash');
-                eyeIcon.classList.add('fa-eye');
-            }
+            pwdInput.type = pwdInput.type === 'password' ? 'text' : 'password';
+            eyeIcon.className = pwdInput.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
         }
 
-        // 3. 發送 API 請求的登入邏輯
         async function handleLogin(event) {
-            event.preventDefault(); // 防止表單重新整理頁面
-            
+            event.preventDefault();
             const role = document.getElementById('role').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('error-message');
             const submitBtn = document.getElementById('submit-btn');
 
-            // 初始化：隱藏錯誤訊息，按鈕顯示載入中
             errorMsg.classList.add('hidden');
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>登入驗證中...';
-            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>登入驗證中...'; submitBtn.disabled = true;
 
             try {
-                // 發送請求給 Google Sheets API
                 const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8', // 避免 CORS 問題
-                    },
-                    body: JSON.stringify({
-                        action: 'login',
-                        username: username,
-                        password: password
-                    })
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'login', username, password })
                 });
-
                 const result = await response.json();
 
                 if (result.success) {
-                    // 檢查使用者選擇的登入身分，是否與資料庫紀錄的一致
                     if (result.role !== role) {
-                        errorMsg.innerText = "登入失敗：您選擇的登入身分與系統紀錄不符。";
+                        errorMsg.innerText = "登入失敗：您選擇的身分與系統紀錄不符。";
                         errorMsg.classList.remove('hidden');
                     } else {
-                        // 登入成功，儲存 Session 資料
                         sessionStorage.setItem('isLoggedIn', 'true');
                         sessionStorage.setItem('userRole', result.role);
                         sessionStorage.setItem('username', username);
-                        // 如果是老師，把任教班級和科目存入 Session，供 teacher.html 產生下拉選單
-                            if (result.role === 'teacher') {
-                                sessionStorage.setItem('teacherClasses', JSON.stringify(result.classes || []));
-                                sessionStorage.setItem('teacherSubjects', JSON.stringify(result.subjects || []));
-                            }
-
-
-                        if (result.role === 'parent' && result.studentId) {
-                            sessionStorage.setItem('studentId', result.studentId);
+                        
+                        if (result.role === 'parent' && result.studentId) sessionStorage.setItem('studentId', result.studentId);
+                        if ((result.role === 'teacher' || result.role === 'cadre') && result.classes) {
+                            sessionStorage.setItem('assignedClasses', JSON.stringify(result.classes));
                         }
-
-                        // 導向對應的系統頁面
-                        if (role === 'teacher') {
-                            window.location.href = 'teacher.html';
-                        } else {
-                            window.location.href = 'parent.html';
-                        }
+                        
+                        // 跳轉
+                        if (role === 'teacher') window.location.href = 'teacher.html';
+                        else if (role === 'cadre') window.location.href = 'cadre.html';
+                        else window.location.href = 'parent.html';
                     }
                 } else {
-                    // 密碼或帳號錯誤
-                    errorMsg.innerText = result.message || "帳號或密碼錯誤，請重新輸入。";
-                    errorMsg.classList.remove('hidden');
+                    errorMsg.innerText = result.message || "帳號或密碼錯誤。"; errorMsg.classList.remove('hidden');
                 }
             } catch (error) {
-                console.error('API 請求失敗:', error);
-                errorMsg.innerText = "系統連線異常，請確認 API_URL 網址是否正確，或稍後再試。";
-                errorMsg.classList.remove('hidden');
+                errorMsg.innerText = "系統連線異常。"; errorMsg.classList.remove('hidden');
             } finally {
-                // 恢復按鈕狀態
-                submitBtn.innerText = "登入";
-                submitBtn.disabled = false;
+                submitBtn.innerText = "登入"; submitBtn.disabled = false;
             }
         }
     </script>
