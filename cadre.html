@@ -225,7 +225,7 @@
             } catch (error) { alert('連線異常。'); } finally { btn.innerHTML = '<i class="fas fa-save mr-2"></i> 儲存出缺席紀錄'; btn.disabled = false; }
         }
 
-        // ==========================================
+ // ==========================================
         // 🟢 模組三：物品、手機、打掃 (通用型 Submissions)
         // ==========================================
         // 儲存三個模組各自的陣列資料與物品名稱
@@ -258,34 +258,41 @@
             finally { btn.innerHTML = '載入名單'; btn.disabled = false; }
         }
 
-if (submissions.length > 0) {
-    let html = `<h4 class="text-sm font-bold text-indigo-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-clipboard-list mr-2"></i>行政繳交追蹤</h4>`;
-    submissions.forEach(rec => {
-        // 🟢 依據狀態給予不同顏色與文字 (加入 none 未攜帶的判斷)
-        let sColor = 'bg-red-100 text-red-700'; // 預設缺交
-        let sText = '缺交';
-        
-        if (rec.status === 'done') {
-            sColor = 'bg-green-100 text-green-700';
-            sText = rec.itemName.includes('打掃') ? '已完成' : '已交';
-        } else if (rec.status === 'pending') {
-            sColor = 'bg-yellow-100 text-yellow-700';
-            sText = rec.itemName.includes('打掃') ? '待加強' : '未交';
-        } else if (rec.status === 'none') {
-            sColor = 'bg-gray-100 text-gray-600';
-            sText = '未攜帶';
-        } else if (rec.status === 'missing') {
-            sColor = 'bg-red-100 text-red-700';
-            sText = rec.itemName.includes('打掃') ? '未打掃' : '缺交';
+        // 🟢 這是被您不小心刪掉/覆蓋的正確函式 (已包含「未攜帶」功能)
+        function renderSubList(mode) {
+            let html = '';
+            subData[mode].data.forEach((st, idx) => {
+                let s = st.status || 'pending'; // 預設未交/待加強
+                
+                // 決定背景顏色 (新增 none: 未攜帶 的灰色背景)
+                let bg = 'bg-yellow-50'; // 預設 pending
+                if (s === 'done') bg = 'bg-green-50';
+                else if (s === 'missing') bg = 'bg-red-50';
+                else if (s === 'none') bg = 'bg-gray-100'; 
+                
+                html += `<div class="flex items-center justify-between p-3 mb-2 rounded-lg border border-gray-200 ${bg}">
+                            <div class="font-bold text-gray-700"><span class="text-gray-400 mr-2 text-sm">${st.studentId}</span>${st.name}</div>
+                            <div class="flex gap-1">`;
+                
+                // 依據不同模組顯示不同的按鈕
+                if (mode === 'hygiene') {
+                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">乾淨</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">待加強</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'missing')" class="px-2 py-1 text-xs font-bold rounded ${s === 'missing' ? 'bg-red-500 text-white shadow' : 'bg-white text-gray-500 border'}">未打掃</button>`;
+                } else if (mode === 'it') {
+                    // 資訊股長專屬：加入「未攜帶 (none)」選項
+                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'none')" class="px-2 py-1 text-xs font-bold rounded ${s === 'none' ? 'bg-gray-500 text-white shadow' : 'bg-white text-gray-500 border'}">未攜帶</button>`;
+                } else {
+                    // 共同物品繳交
+                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>`;
+                }
+                html += `</div></div>`;
+            });
+            document.getElementById(`${mode}-list`).innerHTML = html;
         }
-
-        html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center border-l-4 border-indigo-400">
-                    <h4 class="font-bold text-gray-800">${rec.itemName}</h4>
-                    <span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span>
-                 </div>`;
-    }); 
-    document.getElementById('submission-section').innerHTML = html;
-}
 
         function setSubStatus(mode, idx, s) { subData[mode].data[idx].status = s; renderSubList(mode); }
 
@@ -309,5 +316,6 @@ if (submissions.length > 0) {
     </script>
 </body>
 </html>
+
 
 
