@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生數位聯絡簿</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans pb-10">
+
+    <header class="bg-teal-600 text-white shadow-md rounded-b-3xl pb-6">
+        <div class="p-4 flex justify-between items-center">
+            <h1 class="text-lg font-bold">學生專區</h1>
+            <button onclick="logout()" class="text-teal-100 hover:text-white text-sm">
+                <i class="fas fa-sign-out-alt"></i> 登出
+            </button>
+        </div>
+        <div class="px-6 flex items-center mt-2">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-teal-600 text-2xl font-bold border-4 border-teal-300 shadow-sm">
+                <i class="fas fa-book-reader"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-teal-100 text-sm" id="display-student-class">班級載入中</p>
+                <h2 class="text-2xl font-bold" id="display-student-name">姓名載入中...</h2>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto mt-6 px-4">
+        
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-gray-700">選擇查詢日期</h3>
+            <input type="date" id="daily-date" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2 focus:ring-2 focus:ring-teal-500">
+        </div>
+
+        <div id="loading-msg" class="text-center text-teal-500 py-8 hidden">
+            <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i><p class="mt-2">聯絡簿載入中...</p>
+        </div>
+
+        <div id="announcement-section">
+            </div>
+
+    </main>
+
+    <script>
+        // 🚨 替換 API 網址
+        const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
+        
+        const studentId = sessionStorage.getItem('studentId');
+        const stuName = sessionStorage.getItem('studentName');
+        const stuClass = sessionStorage.getItem('studentClass');
+
+        if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'student') { 
+            alert('請先以學生身分登入！'); window.location.href = 'login.html'; 
+        }
+
+        document.getElementById('display-student-name').innerText = stuName || "同學您好";
+        document.getElementById('display-student-class').innerText = stuClass || "未定班級";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('daily-date');
+            dateInput.valueAsDate = new Date();
+            dateInput.addEventListener('change', (e) => { fetchAnnouncement(e.target.value); });
+            fetchAnnouncement(dateInput.value); 
+        });
+
+        async function fetchAnnouncement(targetDate) {
+            if (!stuClass) {
+                document.getElementById('announcement-section').innerHTML = `<div class="bg-red-50 rounded-xl p-6 text-center text-red-500">系統找不到您的班級資料，無法載入聯絡簿。</div>`;
+                return;
+            }
+
+            document.getElementById('loading-msg').classList.remove('hidden');
+            document.getElementById('announcement-section').innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'loadAnnouncement', date: targetDate, className: stuClass }) 
+                });
+                const result = await response.json();
+                document.getElementById('loading-msg').classList.add('hidden');
+
+                if (result.success && result.content) {
+                    document.getElementById('announcement-section').innerHTML = `
+                        <div class="bg-white rounded-2xl shadow-md border-t-4 border-teal-500 overflow-hidden">
+                            <div class="p-6">
+                                <h4 class="text-lg font-bold text-teal-800 mb-4 flex items-center border-b pb-2">
+                                    <i class="fas fa-bullhorn mr-2"></i> ${targetDate} 班級聯絡簿
+                                </h4>
+                                <p class="text-gray-800 whitespace-pre-wrap text-base leading-relaxed">${result.content}</p>
+                            </div>
+                            <div class="bg-teal-50 px-6 py-3 text-right">
+                                <p class="text-xs text-teal-600 font-bold">發布者：${result.teacher}</p>
+                            </div>
+                        </div>`;
+                } else {
+                    document.getElementById('announcement-section').innerHTML = `
+                        <div class="bg-gray-50 rounded-2xl border border-dashed border-gray-300 p-8 text-center text-gray-500 mt-4 shadow-sm">
+                            <i class="fas fa-bed text-4xl mb-3 text-gray-300"></i>
+                            <p class="font-bold">本日尚無聯絡簿事項</p>
+                            <p class="text-sm mt-1 text-gray-400">老師或幹部還沒有發布公告喔！</p>
+                        </div>`;
+                }
+            } catch (error) { 
+                document.getElementById('loading-msg').classList.add('hidden');
+                document.getElementById('announcement-section').innerHTML = '<span class="text-red-500">連線異常，請檢查網路。</span>'; 
+            }
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+    </script>
+</body>
+</html>
