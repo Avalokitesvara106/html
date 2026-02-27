@@ -262,21 +262,36 @@
             let html = '';
             subData[mode].data.forEach((st, idx) => {
                 let s = st.status || 'pending'; // 預設未交/待加強
-                let bg = s === 'done' ? 'bg-green-50' : (s === 'missing' ? 'bg-red-50' : 'bg-yellow-50');
+                
+                // 決定背景顏色 (新增 none: 未攜帶 的灰色背景)
+                let bg = 'bg-yellow-50'; // 預設 pending
+                if (s === 'done') bg = 'bg-green-50';
+                else if (s === 'missing') bg = 'bg-red-50';
+                else if (s === 'none') bg = 'bg-gray-100'; 
                 
                 html += `<div class="flex items-center justify-between p-3 mb-2 rounded-lg border border-gray-200 ${bg}">
                             <div class="font-bold text-gray-700"><span class="text-gray-400 mr-2 text-sm">${st.studentId}</span>${st.name}</div>
                             <div class="flex gap-1">`;
                 
-                // 依據不同模組顯示不同的按鈕文字
+                // 依據不同模組顯示不同的按鈕
                 if (mode === 'hygiene') {
-                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white' : 'bg-white text-gray-500 border'}">乾淨</button>
-                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-500 border'}">待加強</button>
-                             <button onclick="setSubStatus('${mode}', ${idx}, 'missing')" class="px-2 py-1 text-xs font-bold rounded ${s === 'missing' ? 'bg-red-500 text-white' : 'bg-white text-gray-500 border'}">未打掃</button>`;
+                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">乾淨</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">待加強</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'missing')" class="px-2 py-1 text-xs font-bold rounded ${s === 'missing' ? 'bg-red-500 text-white shadow' : 'bg-white text-gray-500 border'}">未打掃</button>`;
+                } else if (mode === 'it') {
+                    // 🟢 資訊股長專屬：加入「未攜帶 (none)」選項
+                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'none')" class="px-2 py-1 text-xs font-bold rounded ${s === 'none' ? 'bg-gray-500 text-white shadow' : 'bg-white text-gray-500 border'}">未攜帶</button>`;
                 } else {
-                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white' : 'bg-white text-gray-500 border'}">已交</button>
-                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-500 border'}">未交</button>`;
+                    // 共同物品繳交
+                    html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
+                             <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>`;
                 }
+                html += `</div></div>`;
+            });
+            document.getElementById(`${mode}-list`).innerHTML = html;
+        }
                 html += `</div></div>`;
             });
             document.getElementById(`${mode}-list`).innerHTML = html;
@@ -304,3 +319,4 @@
     </script>
 </body>
 </html>
+
