@@ -50,9 +50,10 @@
 
             <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-6">
                  <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-bullhorn text-indigo-500 mr-2"></i>代寫班級聯絡簿 / 佈告</h3>
+                 <p class="text-sm text-gray-500 mb-2">系統已自動載入目前的聯絡簿內容，您可以直接在下方修改或補充。</p>
                  <textarea id="bulletin-content" rows="6" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500" placeholder="請輸入今日要提醒同學的事項 (如：明日考國文)..."></textarea>
                  <div class="mt-4 flex justify-end">
-                     <button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布公告</button>
+                     <button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告</button>
                  </div>
             </div>
 
@@ -88,13 +89,16 @@
 
         JSON.parse(sessionStorage.getItem('assignedClasses') || "[]").forEach(c => classSelect.add(new Option(c, c))); 
 
+        // 🟢 防呆與自動載入機制
         [datePicker, classSelect, itemNameInput].forEach(input => {
             input.addEventListener('change', () => {
                 studentData = []; document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500 font-bold">⚠️ 條件已變更，請重新點擊「載入資料」</td></tr>';
                 document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden');
                 document.getElementById('stats-dashboard').innerText = "等待載入..."; 
+                
                 if(currentMode === 'submission') fetchExistingItems();
-                if(currentMode === 'announcement') document.getElementById('bulletin-content').value = "";
+                // 🟢 條件改變時，如果是聯絡簿模式，自動幫幹部撈取該日期的舊內容
+                if(currentMode === 'announcement') loadBulletin();
             });
         });
 
@@ -117,6 +121,8 @@
             } else if (mode === 'announcement') {
                 tabAnn.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-indigo-600 font-bold transition-all";
                 itemContainer.classList.add('hidden'); tableContainer.classList.add('hidden'); bulletinContainer.classList.remove('hidden');
+                // 🟢 切換到聯絡簿頁籤時，自動載入已儲存的內容！
+                loadBulletin();
             }
         }
 
@@ -135,12 +141,15 @@
 
         function executeLoad() { if (currentMode === 'announcement') loadBulletin(); else loadList(); }
 
+        // 🟢 載入聯絡簿內容的函式
         async function loadBulletin() {
             const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true;
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) });
                 const result = await response.json();
-                if(result.success) document.getElementById('bulletin-content').value = result.content || "";
+                if(result.success) {
+                    document.getElementById('bulletin-content').value = result.content || "";
+                }
             } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; }
         }
 
@@ -151,8 +160,8 @@
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: datePicker.value, className: classSelect.value, content: content, teacherName: sessionStorage.getItem('username') + " (幹部代發)" }) });
                 const result = await res.json();
-                if(result.success) alert('🎉 聯絡簿已發布！'); else alert('失敗：'+result.message);
-            } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布公告`; btn.disabled = false; }
+                if(result.success) alert('🎉 聯絡簿已發布或更新！'); else alert('失敗：'+result.message);
+            } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; }
         }
 
         async function loadList() {
@@ -163,7 +172,7 @@
                 const result = await res.json();
                 if (result.success) { studentData = result.data; renderTable(); document.getElementById('batch-save-btn').classList.remove('hidden'); document.getElementById('quick-fill-btn').classList.remove('hidden'); } 
                 else alert('❌ 失敗：' + result.message);
-            } catch (error) { alert('連線異常'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; loadBtn.disabled = false; }
+            } catch (error) { alert('連線異常'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入名單`; loadBtn.disabled = false; }
         }
 
         function quickFill() { studentData.forEach((st) => { if (!st.isSaved) st.status = 'done'; }); renderTable(); }
