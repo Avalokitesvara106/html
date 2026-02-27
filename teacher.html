@@ -58,9 +58,10 @@
 
             <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-6">
                  <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-bullhorn text-blue-500 mr-2"></i>發布班級聯絡簿 / 佈告</h3>
+                 <p class="text-sm text-gray-500 mb-2">系統已自動載入目前的聯絡簿內容，您可以直接在下方修改或補充。</p>
                  <textarea id="bulletin-content" rows="6" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500" placeholder="請輸入今日要提醒家長或學生的事項..."></textarea>
                  <div class="mt-4 flex justify-end">
-                     <button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布公告</button>
+                     <button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告</button>
                  </div>
             </div>
 
@@ -97,14 +98,17 @@
         JSON.parse(sessionStorage.getItem('teacherClasses') || "[]").forEach(c => classSelect.add(new Option(c, c)));
         JSON.parse(sessionStorage.getItem('teacherSubjects') || "[]").forEach(s => subjectSelect.add(new Option(s, s)));
 
+        // 🟢 防呆與自動載入機制
         [datePicker, classSelect, subjectSelect, examNameInput].forEach(input => {
             input.addEventListener('change', () => {
                 studentData = [];
                 document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入資料」</td></tr>';
                 document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden');
                 document.getElementById('stats-dashboard').innerText = "等待載入...";
+                
                 if (currentMode === 'score') fetchExistingExams();
-                if (currentMode === 'announcement') document.getElementById('bulletin-content').value = "";
+                // 🟢 條件改變時，如果是聯絡簿模式，自動幫老師撈取該日期的舊內容
+                if (currentMode === 'announcement') loadBulletin();
             });
         });
 
@@ -147,6 +151,8 @@
                 tabAnn.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all";
                 examContainer.classList.add('hidden'); subjContainer.classList.add('hidden');
                 tableContainer.classList.add('hidden'); bulletinContainer.classList.remove('hidden');
+                // 🟢 切換到聯絡簿頁籤時，自動載入已儲存的內容！
+                loadBulletin();
             }
             renderTableHeader();
         }
@@ -162,12 +168,15 @@
 
         function executeLoad() { if (currentMode === 'announcement') loadBulletin(); else loadStudentList(); }
 
+        // 🟢 載入聯絡簿內容的函式
         async function loadBulletin() {
             const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true;
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) });
                 const result = await response.json();
-                if(result.success) document.getElementById('bulletin-content').value = result.content || "";
+                if(result.success) {
+                    document.getElementById('bulletin-content').value = result.content || "";
+                }
             } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; }
         }
 
@@ -178,8 +187,8 @@
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: datePicker.value, className: classSelect.value, content: content, teacherName: sessionStorage.getItem('username') }) });
                 const result = await res.json();
-                if(result.success) alert('🎉 公告已發布！家長端可即時查看。'); else alert('失敗：'+result.message);
-            } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布公告`; btn.disabled = false; }
+                if(result.success) alert('🎉 公告已發布或更新！家長端與學生端可即時查看。'); else alert('失敗：'+result.message);
+            } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; }
         }
 
         async function loadStudentList() {
@@ -198,7 +207,6 @@
             } catch (error) { alert('連線異常。'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; loadBtn.disabled = false; }
         }
 
-        // 🟢 一鍵正常：略過家長已請假的學生
         function quickFill() { 
             if (currentMode !== 'attendance') return; 
             studentData.forEach(st => { if (!st.isSaved && st.attendance !== 'leave') { st.attendance = 'present'; } }); 
@@ -230,14 +238,12 @@
                 const disabled = st.isSaved ? 'disabled' : '', rowClass = st.isSaved ? 'bg-gray-100' : 'bg-white';
                 const actionBtn = st.isSaved ? `<button onclick="toggleEdit(${i})" class="text-gray-500 hover:text-blue-600 px-3 py-1"><i class="fas fa-pencil-alt"></i></button>` : `<button class="text-blue-400 px-3 py-1 cursor-default"><i class="fas fa-pen"></i></button>`;
 
-                // 🟢 請假樣式凸顯
                 let tr = document.createElement('tr'); 
                 if (st.attendance === 'leave' && !st.isSaved) tr.className = `bg-blue-50 transition`;
                 else tr.className = `hover:bg-blue-50 transition ${rowClass}`;
 
                 let html = `<td class="p-4 text-sm font-mono">${st.studentId}</td><td class="p-4 text-sm font-bold min-w-[80px]">${st.name}</td>`;
                 if (currentMode === 'attendance') {
-                    // 🟢 加入請假選項
                     let selectClass = st.attendance === 'leave' ? 'w-full border rounded p-1 text-sm focus:border-blue-500 font-bold text-blue-600' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
                     html += `<td class="p-4"><select id="att-${i}" onchange="syncAndRender()" class="${selectClass}" ${disabled}>
                                 <option value="present" ${st.attendance === 'present' ? 'selected' : ''}>✅ 正常</option>
