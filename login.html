@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系統登入 - 807班級管理管理</title>
+    <title>系統登入 - 807班級管理系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -46,12 +46,12 @@
             <input type="hidden" id="role" value="teacher">
             
             <div class="mb-5">
-                <label class="block text-gray-700 text-sm font-bold mb-2 ml-1">帳號</label>
+                <label id="account-label" class="block text-gray-700 text-sm font-bold mb-2 ml-1">教師帳號</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <i class="fas fa-user text-gray-400"></i>
+                        <i id="account-icon" class="fas fa-user-tie text-gray-400"></i>
                     </div>
-                    <input type="text" id="username" class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" placeholder="請輸入帳號" required>
+                    <input type="text" id="username" class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none" placeholder="請輸入教師帳號" required>
                 </div>
             </div>
             
@@ -84,26 +84,45 @@
     </div>
 
     <script>
-        // ==========================================
-        // 🚨 這裡請貼上您最新的 API 網址
-        // ==========================================
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
 
-        // 🟢 強化版：動態切換按鈕 CSS 類別
+        // 🟢 動態切換按鈕與輸入框提示
         function setRole(role) {
             document.getElementById('role').value = role;
             const roles = ['teacher', 'cadre', 'parent', 'student'];
             
+            // 1. 切換按鈕樣式
             roles.forEach(r => {
                 let tab = document.getElementById('tab-' + r);
                 if (r === role) {
-                    // 選中時：深藍漸層、白字、放大、加發光邊框
                     tab.className = "flex-1 py-2 sm:py-2.5 text-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg text-white font-bold transition-all duration-300 transform scale-105 ring-2 ring-blue-300 ring-offset-1 z-10";
                 } else {
-                    // 沒選中時：透明背景、灰字、無放大
                     tab.className = "flex-1 py-2 sm:py-2.5 text-center rounded-xl text-gray-500 hover:text-gray-800 font-medium transition-all duration-300 hover:bg-gray-200/80 z-0";
                 }
             });
+
+            // 2. 切換輸入框的標題與圖示
+            const accountLabel = document.getElementById('account-label');
+            const usernameInput = document.getElementById('username');
+            const accountIcon = document.getElementById('account-icon');
+
+            // 切換時清空輸入框，避免混淆
+            usernameInput.value = '';
+            document.getElementById('password').value = '';
+
+            if (role === 'student') {
+                accountLabel.innerText = '班級代碼';
+                usernameInput.placeholder = '例如：807';
+                accountIcon.className = 'fas fa-users text-gray-400';
+            } else if (role === 'parent' || role === 'cadre') {
+                accountLabel.innerText = '學生學號';
+                usernameInput.placeholder = '請輸入學生學號';
+                accountIcon.className = 'fas fa-user-graduate text-gray-400';
+            } else {
+                accountLabel.innerText = '教師帳號';
+                usernameInput.placeholder = '請輸入教師帳號';
+                accountIcon.className = 'fas fa-user-tie text-gray-400';
+            }
         }
 
         function togglePassword() {
@@ -114,8 +133,7 @@
 
         function showError(msg) {
             const errorContainer = document.getElementById('error-message');
-            const errorText = document.getElementById('error-text');
-            errorText.innerText = msg;
+            document.getElementById('error-text').innerText = msg;
             errorContainer.classList.remove('hidden');
         }
 
@@ -126,8 +144,8 @@
         async function handleLogin(event) {
             event.preventDefault();
             const role = document.getElementById('role').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
             const submitBtn = document.getElementById('submit-btn');
 
             hideError(); 
@@ -136,24 +154,39 @@
             submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
 
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'login', username, password }) });
+                // 發送給 GAS
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'login', role: role, username: username, password: password }) 
+                });
                 const result = await response.json();
                 
                 if (result.success) {
                     if (result.role !== role) {
                         showError("登入失敗：您選擇的身分與系統紀錄不符。");
                     } else {
+                        // 登入成功：清除舊資料，寫入共用狀態
+                        sessionStorage.clear();
                         sessionStorage.setItem('isLoggedIn', 'true'); 
                         sessionStorage.setItem('userRole', result.role); 
                         sessionStorage.setItem('username', username);
                         
-                        if ((result.role === 'parent' || result.role === 'student') && result.studentId) {
-                            sessionStorage.setItem('studentId', result.studentId);
+                        // 🟢 針對不同身分儲存專屬資料
+                        if (result.role === 'student') {
+                            // 班級共用帳號只存班級代碼和名稱
+                            if(result.studentClass) sessionStorage.setItem('studentClass', result.studentClass);
+                            if(result.studentName) sessionStorage.setItem('studentName', result.studentName);
+                        } 
+                        else if (result.role === 'parent' || result.role === 'cadre') {
+                            // 家長和幹部需要存學號
+                            if(result.studentId) sessionStorage.setItem('studentId', result.studentId);
                             if(result.studentName) sessionStorage.setItem('studentName', result.studentName);
                             if(result.studentClass) sessionStorage.setItem('studentClass', result.studentClass);
-                        }
-                        
-                        if (result.role === 'teacher' || result.role === 'cadre') {
+                            if(result.cadreTitle) sessionStorage.setItem('cadreTitle', result.cadreTitle); // 幹部特有職稱
+                        } 
+                        else if (result.role === 'teacher') {
+                            // 老師存任教班級與科目
                             sessionStorage.setItem('assignedClasses', JSON.stringify(result.classes || [])); 
                             sessionStorage.setItem('teacherClasses', JSON.stringify(result.classes || []));  
                             sessionStorage.setItem('teacherSubjects', JSON.stringify(result.subjects || []));
@@ -164,26 +197,29 @@
                         submitBtn.classList.replace('from-blue-600', 'from-green-500');
                         submitBtn.classList.replace('to-indigo-600', 'to-green-600');
 
+                        // 延遲跳轉
                         setTimeout(() => {
                             if (role === 'teacher') window.location.href = 'teacher.html'; 
                             else if (role === 'cadre') window.location.href = 'cadre.html'; 
                             else if (role === 'student') window.location.href = 'student.html'; 
                             else window.location.href = 'parent.html';
                         }, 500);
-                        return; 
                     }
                 } else { 
                     showError(result.message || "帳號或密碼錯誤。"); 
                 }
             } catch (error) { 
-                showError("系統連線異常，請檢查網路狀態。"); 
+                showError("系統連線異常，請檢查網路狀態或 API 網址是否正確。"); 
+                console.error("Login Error:", error);
             } finally { 
-                submitBtn.innerHTML = '登入系統 <i class="fas fa-arrow-right ml-2 opacity-80"></i>'; 
-                submitBtn.disabled = false; 
-                submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+                // 若沒跳轉（發生錯誤），恢復按鈕狀態
+                if (!document.getElementById('error-message').classList.contains('hidden')) {
+                    submitBtn.innerHTML = '登入系統 <i class="fas fa-arrow-right ml-2 opacity-80"></i>'; 
+                    submitBtn.disabled = false; 
+                    submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+                }
             }
         }
     </script>
 </body>
 </html>
-
