@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>幹部控制台 - 繳交狀況追蹤</title>
+    <title>幹部控制台 - 班級行政</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -11,9 +11,7 @@
 
     <header class="md:hidden bg-indigo-800 text-white p-4 flex justify-between items-center shadow-md w-full absolute top-0 z-50">
         <h1 class="text-lg font-bold text-indigo-300">班級行政 - 幹部端</h1>
-        <button onclick="logout()" class="text-red-400 hover:text-white text-sm border border-red-400 px-3 py-1 rounded">
-            <i class="fas fa-sign-out-alt"></i> 登出
-        </button>
+        <button onclick="logout()" class="text-red-400 hover:text-white text-sm border border-red-400 px-3 py-1 rounded"><i class="fas fa-sign-out-alt"></i> 登出</button>
     </header>
 
     <aside class="w-64 bg-indigo-800 text-white flex flex-col hidden md:flex">
@@ -22,7 +20,7 @@
             <p id="cadre-name-display" class="text-sm text-indigo-200 mt-2">幹部控制台</p>
         </div>
         <nav class="flex-1 p-4 space-y-2">
-            <a href="#" class="block px-4 py-2 bg-indigo-600 rounded-lg text-white font-medium"><i class="fas fa-clipboard-check mr-2"></i> 繳交狀況追蹤</a>
+            <a href="#" class="block px-4 py-2 bg-indigo-600 rounded-lg text-white font-medium"><i class="fas fa-tasks mr-2"></i> 班級事務管理</a>
         </nav>
         <div class="p-4 border-t border-indigo-700">
             <button onclick="logout()" class="w-full py-2 text-sm text-red-400 border border-red-400 rounded hover:bg-red-400 hover:text-white transition"><i class="fas fa-sign-out-alt mr-1"></i>登出</button>
@@ -31,22 +29,34 @@
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden pt-16 md:pt-0">
         <div class="flex-1 overflow-y-auto p-4 md:p-8">
-            <h1 class="text-2xl font-bold text-gray-800 mb-6">📌 登記與追蹤繳交事項</h1>
+            
+            <div class="flex mb-6 bg-gray-200 rounded-lg p-1 max-w-md">
+                <button id="tab-submission" onclick="switchMode('submission')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-indigo-600 font-bold transition-all"><i class="fas fa-clipboard-check mr-1"></i> 繳交狀況追蹤</button>
+                <button id="tab-announcement" onclick="switchMode('announcement')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-bullhorn mr-1"></i> 班級聯絡簿</button>
+            </div>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">日期</label><input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500"></div>
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">所屬班級</label><select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 bg-gray-100" disabled></select></div>
-                    <div>
+                    <div id="itemNameContainer">
                         <label class="block text-sm font-bold text-indigo-600 mb-1">項目名稱 (可輸入或點選)</label>
                         <input type="text" id="itemNameInput" list="existingItemsList" placeholder="例: 畢旅同意書" class="w-full border-indigo-300 border-2 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500">
                         <datalist id="existingItemsList"></datalist>
                     </div>
-                    <div><button id="load-btn" onclick="loadList()" class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition shadow"><i class="fas fa-cloud-download-alt mr-1"></i> 載入名單</button></div>
+                    <div><button id="load-btn" onclick="executeLoad()" class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition shadow"><i class="fas fa-cloud-download-alt mr-1"></i> 載入資料</button></div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-6">
+                 <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-bullhorn text-indigo-500 mr-2"></i>代寫班級聯絡簿 / 佈告</h3>
+                 <textarea id="bulletin-content" rows="6" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-indigo-500" placeholder="請輸入今日要提醒同學的事項 (如：明日考國文)..."></textarea>
+                 <div class="mt-4 flex justify-end">
+                     <button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布公告</button>
+                 </div>
+            </div>
+
+            <div id="table-container" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-indigo-50 p-4 border-b border-gray-200 flex justify-between items-center">
                     <div id="stats-dashboard" class="text-indigo-800 font-bold text-sm">請先載入名單</div>
                     <button onclick="exportCSV()" class="bg-white border border-indigo-300 text-indigo-600 hover:bg-indigo-100 font-bold py-1 px-3 rounded shadow-sm text-sm transition"><i class="fas fa-file-csv mr-1"></i> 匯出 CSV</button>
@@ -57,9 +67,7 @@
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr><th class="p-4 text-sm font-semibold text-gray-600 w-24">學號</th><th class="p-4 text-sm font-semibold text-gray-600 w-24">姓名</th><th class="p-4 text-sm font-semibold text-gray-600 w-72">繳交狀態 (點擊切換)</th><th class="p-4 text-sm font-semibold text-gray-600 text-center w-24">操作</th></tr>
                         </thead>
-                        <tbody id="tableBody" class="divide-y divide-gray-100">
-                            <tr><td colspan="4" class="text-center py-8 text-gray-400">請載入資料</td></tr>
-                        </tbody>
+                        <tbody id="tableBody"><tr><td colspan="4" class="text-center py-8 text-gray-400">請載入資料</td></tr></tbody>
                     </table>
                 </div>
                 <div class="bg-gray-50 p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -74,23 +82,43 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
         if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'cadre') { alert('權限不足！'); window.location.href = 'login.html'; }
 
-        let studentData = [];
+        let currentMode = 'submission', studentData = [];
         const datePicker = document.getElementById('datePicker'), classSelect = document.getElementById('classSelect'), itemNameInput = document.getElementById('itemNameInput');
         datePicker.valueAsDate = new Date(); document.getElementById('cadre-name-display').innerText = sessionStorage.getItem('username') + " 幹部";
 
-        const classes = JSON.parse(sessionStorage.getItem('assignedClasses') || "[]");
-        classes.forEach(c => classSelect.add(new Option(c, c))); 
+        JSON.parse(sessionStorage.getItem('assignedClasses') || "[]").forEach(c => classSelect.add(new Option(c, c))); 
 
         [datePicker, classSelect, itemNameInput].forEach(input => {
             input.addEventListener('change', () => {
-                studentData = []; document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入名單」</td></tr>';
+                studentData = []; document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500 font-bold">⚠️ 條件已變更，請重新點擊「載入資料」</td></tr>';
                 document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden');
-                document.getElementById('stats-dashboard').innerText = "等待載入..."; fetchExistingItems();
+                document.getElementById('stats-dashboard').innerText = "等待載入..."; 
+                if(currentMode === 'submission') fetchExistingItems();
+                if(currentMode === 'announcement') document.getElementById('bulletin-content').value = "";
             });
         });
 
         window.addEventListener('beforeunload', function (e) { if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '確定離開？'; } });
-        if (classes.length > 0) fetchExistingItems();
+        fetchExistingItems();
+
+        function switchMode(mode) {
+            currentMode = mode; studentData = []; 
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">請重新載入資料</td></tr>';
+            document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden');
+            const tabSub = document.getElementById('tab-submission'), tabAnn = document.getElementById('tab-announcement');
+            const itemContainer = document.getElementById('itemNameContainer'), tableContainer = document.getElementById('table-container'), bulletinContainer = document.getElementById('bulletin-container');
+
+            [tabSub, tabAnn].forEach(t => t.className = "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all");
+            
+            if (mode === 'submission') {
+                tabSub.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-indigo-600 font-bold transition-all";
+                itemContainer.classList.remove('hidden'); tableContainer.classList.remove('hidden'); bulletinContainer.classList.add('hidden');
+                fetchExistingItems();
+            } else if (mode === 'announcement') {
+                tabAnn.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-indigo-600 font-bold transition-all";
+                itemContainer.classList.add('hidden'); tableContainer.classList.add('hidden'); bulletinContainer.classList.remove('hidden');
+            }
+        }
 
         async function fetchExistingItems() {
             if (!classSelect.value) return;
@@ -100,9 +128,31 @@
                 if (result.success) {
                     const datalist = document.getElementById('existingItemsList'); datalist.innerHTML = ''; 
                     result.items.forEach(item => datalist.appendChild(new Option(item, item)));
-                    itemNameInput.placeholder = result.items.length > 0 && !itemNameInput.value ? "請點選舊項目或輸入新項目" : "請輸入新項目";
+                    itemNameInput.placeholder = result.items.length > 0 && !itemNameInput.value ? "請點選或輸入新項目" : "請輸入新項目";
                 }
             } catch (error) {}
+        }
+
+        function executeLoad() { if (currentMode === 'announcement') loadBulletin(); else loadList(); }
+
+        async function loadBulletin() {
+            const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true;
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) });
+                const result = await response.json();
+                if(result.success) document.getElementById('bulletin-content').value = result.content || "";
+            } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; }
+        }
+
+        async function saveBulletin() {
+            const content = document.getElementById('bulletin-content').value;
+            if(!content.trim()) return alert("請輸入內容！");
+            const btn = document.getElementById('save-bulletin-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 發布中`; btn.disabled = true;
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: datePicker.value, className: classSelect.value, content: content, teacherName: sessionStorage.getItem('username') + " (幹部代發)" }) });
+                const result = await res.json();
+                if(result.success) alert('🎉 聯絡簿已發布！'); else alert('失敗：'+result.message);
+            } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布公告`; btn.disabled = false; }
         }
 
         async function loadList() {
@@ -111,11 +161,9 @@
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadSubmissions', date: datePicker.value, className: classSelect.value, itemName: itemNameInput.value }) });
                 const result = await res.json();
-                if (result.success) {
-                    studentData = result.data; renderTable();
-                    document.getElementById('batch-save-btn').classList.remove('hidden'); document.getElementById('quick-fill-btn').classList.remove('hidden');
-                } else alert('❌ 失敗：' + result.message);
-            } catch (error) { alert('連線異常'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入名單`; loadBtn.disabled = false; }
+                if (result.success) { studentData = result.data; renderTable(); document.getElementById('batch-save-btn').classList.remove('hidden'); document.getElementById('quick-fill-btn').classList.remove('hidden'); } 
+                else alert('❌ 失敗：' + result.message);
+            } catch (error) { alert('連線異常'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; loadBtn.disabled = false; }
         }
 
         function quickFill() { studentData.forEach((st) => { if (!st.isSaved) st.status = 'done'; }); renderTable(); }
