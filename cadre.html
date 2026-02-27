@@ -15,14 +15,10 @@
             <p id="cadre-name-display" class="text-sm text-indigo-200 mt-2">幹部控制台</p>
         </div>
         <nav class="flex-1 p-4 space-y-2">
-            <a href="#" class="block px-4 py-2 bg-indigo-600 rounded-lg text-white font-medium">
-                <i class="fas fa-clipboard-check mr-2"></i> 繳交狀況追蹤
-            </a>
+            <a href="#" class="block px-4 py-2 bg-indigo-600 rounded-lg text-white font-medium"><i class="fas fa-clipboard-check mr-2"></i> 繳交狀況追蹤</a>
         </nav>
         <div class="p-4 border-t border-indigo-700">
-            <button onclick="logout()" class="w-full py-2 text-sm text-red-400 border border-red-400 rounded hover:bg-red-400 hover:text-white transition">
-                <i class="fas fa-sign-out-alt mr-1"></i>登出
-            </button>
+            <button onclick="logout()" class="w-full py-2 text-sm text-red-400 border border-red-400 rounded hover:bg-red-400 hover:text-white transition"><i class="fas fa-sign-out-alt mr-1"></i>登出</button>
         </div>
     </aside>
 
@@ -32,232 +28,155 @@
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
-                        <input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">所屬班級</label>
-                        <select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 bg-gray-100" disabled></select>
-                    </div>
-                    
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">日期</label><input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500"></div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">所屬班級</label><select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 bg-gray-100" disabled></select></div>
                     <div>
                         <label class="block text-sm font-bold text-indigo-600 mb-1">項目名稱 (可輸入新項目或點選)</label>
                         <input type="text" id="itemNameInput" list="existingItemsList" placeholder="例: 畢旅同意書" class="w-full border-indigo-300 border-2 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500">
                         <datalist id="existingItemsList"></datalist>
                     </div>
-                    
-                    <div>
-                        <button id="load-btn" onclick="loadList()" class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition shadow">
-                            <i class="fas fa-cloud-download-alt mr-1"></i> 載入名單
-                        </button>
-                    </div>
+                    <div><button id="load-btn" onclick="loadList()" class="w-full bg-indigo-600 text-white font-medium py-2 rounded-lg hover:bg-indigo-700 transition shadow"><i class="fas fa-cloud-download-alt mr-1"></i> 載入名單</button></div>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-indigo-50 p-4 border-b border-gray-200 flex justify-between items-center">
+                    <div id="stats-dashboard" class="text-indigo-800 font-bold text-sm">請先載入名單</div>
+                    <button onclick="exportCSV()" class="bg-white border border-indigo-300 text-indigo-600 hover:bg-indigo-100 font-bold py-1 px-3 rounded shadow-sm text-sm transition"><i class="fas fa-file-csv mr-1"></i> 匯出 CSV</button>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="p-4 text-sm font-semibold text-gray-600 w-24">學號</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600 w-32">姓名</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600 w-72">繳交狀態 (點擊切換)</th>
-                                <th class="p-4 text-sm font-semibold text-gray-600 text-center w-32">操作</th>
-                            </tr>
+                            <tr><th class="p-4 text-sm font-semibold text-gray-600 w-24">學號</th><th class="p-4 text-sm font-semibold text-gray-600 w-32">姓名</th><th class="p-4 text-sm font-semibold text-gray-600 w-72">繳交狀態 (點擊切換)</th><th class="p-4 text-sm font-semibold text-gray-600 text-center w-32">操作</th></tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-gray-100">
                             <tr><td colspan="4" class="text-center py-8 text-gray-400">請填寫或選擇繳交項目並載入資料</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="bg-gray-50 p-4 border-t border-gray-200 flex justify-end">
-                    <button id="batch-save-btn" onclick="batchSave()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center hidden">
-                        <i class="fas fa-save mr-2"></i> 極速一鍵儲存
-                    </button>
+                <div class="bg-gray-50 p-4 border-t border-gray-200 flex justify-between items-center">
+                    <div><button id="quick-fill-btn" onclick="quickFill()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-bold py-2 px-4 rounded-lg shadow-sm transition hidden"><i class="fas fa-magic mr-1"></i> 一鍵全班標記完成</button></div>
+                    <button id="batch-save-btn" onclick="batchSave()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center hidden"><i class="fas fa-save mr-2"></i> 極速一鍵儲存</button>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        // 🚨 這裡已經為您填入正確的 API 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
-
-        if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'cadre') {
-            alert('權限不足，請先以幹部身分登入！'); window.location.href = 'login.html';
-        }
+        if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'cadre') { alert('權限不足！'); window.location.href = 'login.html'; }
 
         let studentData = [];
-        const datePicker = document.getElementById('datePicker');
-        const classSelect = document.getElementById('classSelect');
-        const itemNameInput = document.getElementById('itemNameInput');
+        const datePicker = document.getElementById('datePicker'), classSelect = document.getElementById('classSelect'), itemNameInput = document.getElementById('itemNameInput');
+        datePicker.valueAsDate = new Date(); document.getElementById('cadre-name-display').innerText = sessionStorage.getItem('username') + " 幹部";
 
-        datePicker.valueAsDate = new Date();
-        document.getElementById('cadre-name-display').innerText = sessionStorage.getItem('username') + " 幹部";
-
-        // 載入幹部權限的班級
         const classes = JSON.parse(sessionStorage.getItem('assignedClasses') || "[]");
         classes.forEach(c => classSelect.add(new Option(c, c))); 
 
-        // 🟢 監聽器：當日期改變時，自動去撈取那一天有存過什麼項目
-        datePicker.addEventListener('change', fetchExistingItems);
+        // 🟢 防呆機制
+        [datePicker, classSelect, itemNameInput].forEach(input => {
+            input.addEventListener('change', () => {
+                studentData = []; document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入名單」</td></tr>';
+                document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden');
+                document.getElementById('stats-dashboard').innerText = "等待載入...";
+                fetchExistingItems();
+            });
+        });
 
-        // 頁面載入時，自動抓取今日已有的項目
-        if (classes.length > 0) {
-            fetchExistingItems();
-        }
+        window.addEventListener('beforeunload', function (e) {
+            if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '尚有未儲存資料，確定離開？'; }
+        });
 
-        // 🟢 動態抓取並填充下拉選單 (<datalist>)
+        if (classes.length > 0) fetchExistingItems();
+
         async function fetchExistingItems() {
-            const date = datePicker.value;
-            const className = classSelect.value;
-            if (!className) return;
-
+            if (!classSelect.value) return;
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'getSubmissionItems', date: date, className: className })
-                });
-                const result = await response.json();
-                
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getSubmissionItems', date: datePicker.value, className: classSelect.value }) });
+                const result = await res.json();
                 if (result.success) {
-                    const datalist = document.getElementById('existingItemsList');
-                    datalist.innerHTML = ''; // 清空舊的選項
-                    
-                    // 將後端回傳的已有項目塞入選單
-                    result.items.forEach(item => {
-                        let option = document.createElement('option');
-                        option.value = item;
-                        datalist.appendChild(option);
-                    });
-
-                    // 如果有舊項目，清除輸入框提示使用者選擇；如果沒有，保持空白
-                    if(result.items.length > 0 && !itemNameInput.value) {
-                        itemNameInput.placeholder = "請點擊選擇舊項目或輸入新項目";
-                    } else if (result.items.length === 0) {
-                        itemNameInput.placeholder = "本日無舊項目，請輸入新項目";
-                    }
+                    const datalist = document.getElementById('existingItemsList'); datalist.innerHTML = ''; 
+                    result.items.forEach(item => datalist.appendChild(new Option(item, item)));
+                    itemNameInput.placeholder = result.items.length > 0 && !itemNameInput.value ? "請點選舊項目或輸入新項目" : "請輸入新項目";
                 }
-            } catch (error) {
-                console.error('獲取舊項目失敗');
-            }
+            } catch (error) {}
         }
 
         async function loadList() {
-            const date = datePicker.value;
-            const className = classSelect.value;
-            const itemName = itemNameInput.value;
-
-            if (!itemName.trim()) { alert("請填寫或選擇「繳交項目名稱」！"); return; }
-
-            const loadBtn = document.getElementById('load-btn');
-            const originalText = loadBtn.innerHTML;
-            loadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; loadBtn.disabled = true;
-
+            if (!itemNameInput.value.trim()) return alert("請填寫「繳交項目」！");
+            const loadBtn = document.getElementById('load-btn'); loadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; loadBtn.disabled = true;
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'loadSubmissions', date, className, itemName })
-                });
-                const result = await response.json();
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadSubmissions', date: datePicker.value, className: classSelect.value, itemName: itemNameInput.value }) });
+                const result = await res.json();
                 if (result.success) {
                     studentData = result.data; renderTable();
-                    document.getElementById('batch-save-btn').classList.remove('hidden');
+                    document.getElementById('batch-save-btn').classList.remove('hidden'); document.getElementById('quick-fill-btn').classList.remove('hidden');
                 } else alert('❌ 失敗：' + result.message);
-            } catch (error) { alert('連線異常'); } 
-            finally { loadBtn.innerHTML = originalText; loadBtn.disabled = false; }
+            } catch (error) { alert('連線異常'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入名單`; loadBtn.disabled = false; }
         }
 
-        function changeStatus(index, newStatus) {
-            if (studentData[index].isSaved) return; 
-            studentData[index].status = newStatus;
-            renderTable(); 
-        }
+        function quickFill() { studentData.forEach((st) => { if (!st.isSaved) st.status = 'done'; }); renderTable(); }
+        function changeStatus(index, newStatus) { if (!studentData[index].isSaved) { studentData[index].status = newStatus; renderTable(); } }
 
         function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('tableBody'); tbody.innerHTML = '';
+            
+            // 🟢 即時統計
+            let d=0, p=0, m=0;
+            studentData.forEach(st => { if(st.status==='done') d++; else if(st.status==='pending') p++; else m++; });
+            document.getElementById('stats-dashboard').innerHTML = `✅ 已完成: ${d} 人 &nbsp;|&nbsp; ⚠️ 未完成: ${p} 人 &nbsp;|&nbsp; ❌ 缺交: ${m} 人`;
+
             if(studentData.length === 0) return tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">查無資料</td></tr>';
 
-            studentData.forEach((student, i) => {
-                const isLocked = student.isSaved;
-                const rowClass = isLocked ? 'bg-gray-100' : 'bg-white';
-                const actionBtn = isLocked 
-                    ? `<button onclick="toggleEdit(${i})" class="text-gray-500 hover:text-indigo-600 px-3 py-1"><i class="fas fa-pencil-alt"></i> 解鎖修改</button>`
-                    : `<span class="text-green-500 font-bold px-3 py-1 cursor-default"><i class="fas fa-edit"></i> 編輯中</span>`;
+            studentData.forEach((st, i) => {
+                const rowClass = st.isSaved ? 'bg-gray-100' : 'bg-white';
+                const actionBtn = st.isSaved ? `<button onclick="toggleEdit(${i})" class="text-gray-500 hover:text-indigo-600 px-3 py-1"><i class="fas fa-pencil-alt"></i></button>` : `<span class="text-green-500 font-bold px-3 py-1 cursor-default"><i class="fas fa-edit"></i></span>`;
+                let btnDone = st.status === 'done' ? 'bg-green-100 border-green-500 text-green-700 shadow-sm' : 'bg-white border-gray-200 text-gray-400';
+                let btnPending = st.status === 'pending' ? 'bg-yellow-100 border-yellow-500 text-yellow-700 shadow-sm' : 'bg-white border-gray-200 text-gray-400';
+                let btnMissing = st.status === 'missing' ? 'bg-red-100 border-red-500 text-red-700 shadow-sm' : 'bg-white border-gray-200 text-gray-400';
+                let disAttr = st.isSaved ? 'disabled' : '', cursor = st.isSaved ? 'cursor-not-allowed opacity-60' : 'cursor-pointer';
 
-                let btnDone = student.status === 'done' ? 'bg-green-100 border-green-500 text-green-700 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:border-green-300';
-                let btnPending = student.status === 'pending' ? 'bg-yellow-100 border-yellow-500 text-yellow-700 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:border-yellow-300';
-                let btnMissing = student.status === 'missing' ? 'bg-red-100 border-red-500 text-red-700 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:border-red-300';
-
-                let disabledAttr = isLocked ? 'disabled' : '';
-                let cursorClass = isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer';
-
-                let tr = document.createElement('tr');
-                tr.className = `hover:bg-indigo-50 transition ${rowClass}`;
-                tr.innerHTML = `
-                    <td class="p-4 text-sm font-mono">${student.studentId}</td>
-                    <td class="p-4 text-sm font-bold">${student.name}</td>
-                    <td class="p-4">
-                        <input type="hidden" id="stat-${i}" value="${student.status}">
-                        <div class="flex space-x-2">
-                            <button onclick="changeStatus(${i}, 'done')" class="border-2 rounded-lg px-3 py-1 text-sm font-bold transition-all ${btnDone} ${cursorClass}" ${disabledAttr}>✅ 完成</button>
-                            <button onclick="changeStatus(${i}, 'pending')" class="border-2 rounded-lg px-3 py-1 text-sm font-bold transition-all ${btnPending} ${cursorClass}" ${disabledAttr}>⚠️ 未完成</button>
-                            <button onclick="changeStatus(${i}, 'missing')" class="border-2 rounded-lg px-3 py-1 text-sm font-bold transition-all ${btnMissing} ${cursorClass}" ${disabledAttr}>❌ 缺交</button>
-                        </div>
-                    </td>
-                    <td class="p-4 text-center">${actionBtn}</td>
-                `;
+                let tr = document.createElement('tr'); tr.className = `hover:bg-indigo-50 transition ${rowClass}`;
+                tr.innerHTML = `<td class="p-4 text-sm font-mono">${st.studentId}</td><td class="p-4 text-sm font-bold">${st.name}</td>
+                    <td class="p-4"><input type="hidden" id="stat-${i}" value="${st.status}"><div class="flex space-x-2">
+                            <button onclick="changeStatus(${i}, 'done')" class="border-2 rounded-lg px-3 py-1 text-sm font-bold transition-all ${btnDone} ${cursor}" ${disAttr}>✅ 完成</button>
+                            <button onclick="changeStatus(${i}, 'pending')" class="border-2 rounded-lg px-3 py-1 text-sm font-bold transition-all ${btnPending} ${cursor}" ${disAttr}>⚠️ 未完成</button>
+                            <button onclick="changeStatus(${i}, 'missing')" class="border-2 rounded-lg px-3 py-1 text-sm font-bold transition-all ${btnMissing} ${cursor}" ${disAttr}>❌ 缺交</button>
+                        </div></td><td class="p-4 text-center">${actionBtn}</td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        function toggleEdit(index) { 
-            syncData(); 
-            studentData[index].isSaved = false; 
-            renderTable(); 
-        }
-
-        function syncData() { 
-            studentData.forEach((st, i) => { 
-                if (!st.isSaved) { let el = document.getElementById(`stat-${i}`); if(el) st.status = el.value; }
-            }); 
-        }
+        function toggleEdit(index) { syncData(); studentData[index].isSaved = false; renderTable(); }
+        function syncData() { studentData.forEach((st, i) => { if (!st.isSaved) { let el = document.getElementById(`stat-${i}`); if(el) st.status = el.value; }}); }
 
         async function batchSave() {
-            syncData();
-            const records = [];
-            const date = datePicker.value;
-            const className = classSelect.value;
-            const itemName = itemNameInput.value;
-
-            studentData.forEach(st => { 
-                if (!st.isSaved) records.push({ date, className, itemName, studentId: st.studentId, name: st.name, status: st.status }); 
-            });
-            
-            if (records.length === 0) { alert('沒有變更！'); return; }
-
-            const btn = document.getElementById('batch-save-btn');
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`; btn.disabled = true;
+            syncData(); const records = [];
+            studentData.forEach(st => { if (!st.isSaved) records.push({ date: datePicker.value, className: classSelect.value, itemName: itemNameInput.value, studentId: st.studentId, name: st.name, status: st.status }); });
+            if (records.length === 0) return alert('沒有變更！');
+            const btn = document.getElementById('batch-save-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`; btn.disabled = true;
 
             try {
-                const res = await fetch(API_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'batchSaveSubmissions', records })
-                });
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'batchSaveSubmissions', records }) });
                 const result = await res.json();
-                if (result.success) { 
-                    studentData.forEach(st => st.isSaved = true); 
-                    
-                    // 儲存成功後，自動重新抓取一次清單（以確保剛新增的項目馬上出現在下拉選單中）
-                    fetchExistingItems();
-                    renderTable(); 
-                    alert('🎉 儲存成功！'); 
-                } else alert('❌ 失敗：' + result.message);
+                if (result.success) { studentData.forEach(st => st.isSaved = true); fetchExistingItems(); renderTable(); alert('🎉 儲存成功！'); } else alert('❌ 失敗：' + result.message);
             } catch (error) { alert('連線異常。'); }
-            
             btn.innerHTML = `<i class="fas fa-save mr-2"></i> 極速一鍵儲存`; btn.disabled = false;
+        }
+
+        // 🟢 匯出 CSV 檔案
+        function exportCSV() {
+            if (studentData.length === 0) return alert('沒有資料可以匯出！');
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+            csvContent += "學號,姓名,繳交狀態\n";
+            studentData.forEach(st => {
+                let stat = st.status === 'done' ? '完成' : (st.status === 'pending' ? '未完成' : '缺交');
+                csvContent += `${st.studentId},${st.name},${stat}\n`;
+            });
+            const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `繳交名單_${datePicker.value}_${itemNameInput.value}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
         function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
