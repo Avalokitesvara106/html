@@ -16,8 +16,9 @@
 
         <div class="flex mb-6 bg-gray-200 rounded-lg p-1 text-sm">
             <button id="tab-teacher" onclick="setRole('teacher')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all">老師</button>
+            <button id="tab-cadre" onclick="setRole('cadre')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">幹部</button>
             <button id="tab-parent" onclick="setRole('parent')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">家長</button>
-            <button id="tab-cadre" onclick="setRole('cadre')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">班級幹部</button>
+            <button id="tab-student" onclick="setRole('student')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">學生</button>
         </div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
@@ -42,7 +43,7 @@
 
         function setRole(role) {
             document.getElementById('role').value = role;
-            ['teacher', 'parent', 'cadre'].forEach(r => {
+            ['teacher', 'cadre', 'parent', 'student'].forEach(r => {
                 let tab = document.getElementById('tab-' + r);
                 if (r === role) tab.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all";
                 else tab.className = "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all";
@@ -69,8 +70,7 @@
                     } else {
                         sessionStorage.setItem('isLoggedIn', 'true'); sessionStorage.setItem('userRole', result.role); sessionStorage.setItem('username', username);
                         
-                        // 🟢 儲存家長權限與學生基本資料
-                        if (result.role === 'parent' && result.studentId) {
+                        if ((result.role === 'parent' || result.role === 'student') && result.studentId) {
                             sessionStorage.setItem('studentId', result.studentId);
                             if(result.studentName) sessionStorage.setItem('studentName', result.studentName);
                             if(result.studentClass) sessionStorage.setItem('studentClass', result.studentClass);
@@ -81,7 +81,12 @@
                             sessionStorage.setItem('teacherClasses', JSON.stringify(result.classes || []));  
                             sessionStorage.setItem('teacherSubjects', JSON.stringify(result.subjects || []));
                         }
-                        if (role === 'teacher') window.location.href = 'teacher.html'; else if (role === 'cadre') window.location.href = 'cadre.html'; else window.location.href = 'parent.html';
+
+                        // 🟢 跳轉分流
+                        if (role === 'teacher') window.location.href = 'teacher.html'; 
+                        else if (role === 'cadre') window.location.href = 'cadre.html'; 
+                        else if (role === 'student') window.location.href = 'student.html'; 
+                        else window.location.href = 'parent.html';
                     }
                 } else { errorMsg.innerText = result.message || "帳號或密碼錯誤。"; errorMsg.classList.remove('hidden'); }
             } catch (error) { errorMsg.innerText = "系統連線異常。"; errorMsg.classList.remove('hidden'); } 
