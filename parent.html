@@ -13,16 +13,12 @@
     <header class="bg-blue-600 text-white shadow-md rounded-b-3xl pb-6">
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-lg font-bold">家長報表中心</h1>
-            <button onclick="logout()" class="text-blue-100 hover:text-white text-sm">
-                <i class="fas fa-sign-out-alt"></i> 登出
-            </button>
+            <button onclick="logout()" class="text-blue-100 hover:text-white text-sm"><i class="fas fa-sign-out-alt"></i> 登出</button>
         </div>
         <div class="px-6 flex items-center mt-2">
-            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold border-4 border-blue-300 shadow-sm">
-                <i class="fas fa-user-graduate"></i>
-            </div>
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold border-4 border-blue-300 shadow-sm"><i class="fas fa-user-graduate"></i></div>
             <div class="ml-4">
-                <p class="text-blue-100 text-sm">家長您好，您綁定的學號為</p>
+                <p class="text-blue-100 text-sm">家長您好，綁定學號</p>
                 <h2 class="text-2xl font-bold" id="display-student-id">載入中...</h2>
             </div>
         </div>
@@ -30,17 +26,12 @@
 
     <div class="max-w-md mx-auto px-4 mt-6">
         <div class="flex bg-gray-200 rounded-lg p-1">
-            <button id="btn-daily" onclick="switchTab('daily')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold text-sm transition-all">
-                每日視角
-            </button>
-            <button id="btn-weekly" onclick="switchTab('weekly')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold text-sm transition-all">
-                每週總結
-            </button>
+            <button id="btn-daily" onclick="switchTab('daily')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold text-sm transition-all">每日視角</button>
+            <button id="btn-weekly" onclick="switchTab('weekly')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold text-sm transition-all">每週總結</button>
         </div>
     </div>
 
     <main class="max-w-md mx-auto mt-4 px-4">
-        
         <section id="view-daily" class="block">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-gray-700">選擇查詢日期</h3>
@@ -48,189 +39,126 @@
             </div>
 
             <div id="daily-content-container">
-                <div id="loading-msg" class="text-center text-blue-500 py-8 hidden">
-                    <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i><p class="mt-2">資料載入中...</p>
-                </div>
+                <div id="loading-msg" class="text-center text-blue-500 py-8 hidden"><i class="fas fa-spinner fa-spin mr-2 text-2xl"></i><p class="mt-2">資料載入中...</p></div>
                 
+                <div id="announcement-section" class="mb-4"></div>
+
                 <div id="submission-section" class="mb-6"></div>
-
                 <div id="attendance-section" class="mb-6"></div>
-
                 <div id="score-section" class="mb-6"></div>
                 
                 <div id="no-data-msg" class="hidden bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500 mt-4">
-                    <i class="fas fa-box-open text-3xl mb-2 text-gray-300"></i>
-                    <p>本日無各項紀錄</p>
+                    <i class="fas fa-box-open text-3xl mb-2 text-gray-300"></i><p>本日無各項紀錄或公告</p>
                 </div>
             </div>
         </section>
 
         <section id="view-weekly" class="hidden">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4 mt-2">
-                <p class="text-sm font-bold text-gray-700 mb-4"><i class="fas fa-chart-line text-blue-500 mr-2"></i>近期學習表現</p>
+                <p class="text-sm font-bold text-gray-700 mb-4"><i class="fas fa-chart-line text-blue-500 mr-2"></i>綜合評分真實趨勢 (回推5日)</p>
                 <canvas id="gradeChart" width="400" height="250"></canvas>
             </div>
+            <div id="weekly-loading-msg" class="text-center text-blue-500 py-4 hidden"><i class="fas fa-spinner fa-spin mr-2"></i>分析資料中...</div>
             <div class="bg-blue-50 rounded-xl border border-blue-100 p-4 text-sm text-blue-800">
-                <p><i class="fas fa-info-circle mr-2"></i> 上圖為學生近期綜合表現趨勢圖，供家長參考學習波動。</p>
+                <p><i class="fas fa-info-circle mr-2"></i> 系統會自動抓取過去 5 天的真實成績紀錄並進行日平均計算，若當日未登錄成績則圖表會中斷不連線。</p>
             </div>
         </section>
-
     </main>
 
     <script>
-        // 🚨 這裡已經為您填入正確的 API 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
-
-        // 安全檢查
         const studentId = sessionStorage.getItem('studentId');
-        if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'parent' || !studentId) {
-            alert('請先以家長身分登入！');
-            window.location.href = 'login.html';
-        }
+        if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'parent') { alert('請先登入！'); window.location.href = 'login.html'; }
 
         document.getElementById('display-student-id').innerText = studentId;
 
-        // 初始化頁面
         document.addEventListener('DOMContentLoaded', () => {
             const dateInput = document.getElementById('daily-date');
             dateInput.valueAsDate = new Date();
-            
             dateInput.addEventListener('change', (e) => { fetchDailyData(e.target.value); });
-            fetchDailyData(dateInput.value); // 第一次載入
+            fetchDailyData(dateInput.value); 
         });
 
-        // 🟢 標籤切換邏輯 (已修復加回)
         function switchTab(tab) {
             document.getElementById('view-daily').classList.toggle('hidden', tab !== 'daily');
             document.getElementById('view-weekly').classList.toggle('hidden', tab !== 'weekly');
-            
-            document.getElementById('btn-daily').className = tab === 'daily' 
-                ? "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold text-sm transition-all" 
-                : "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold text-sm transition-all";
-            
-            document.getElementById('btn-weekly').className = tab === 'weekly' 
-                ? "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold text-sm transition-all" 
-                : "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold text-sm transition-all";
-            
-            // 如果切換到一週視角，則觸發繪製圖表
-            if (tab === 'weekly') renderChart();
+            document.getElementById('btn-daily').className = tab === 'daily' ? "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold text-sm" : "flex-1 py-2 text-center rounded-md text-gray-500 font-bold text-sm";
+            document.getElementById('btn-weekly').className = tab === 'weekly' ? "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold text-sm" : "flex-1 py-2 text-center rounded-md text-gray-500 font-bold text-sm";
+            if (tab === 'weekly') fetchWeeklyData();
         }
 
-        // 核心功能：向 Google Sheets 抓取報表
+        // 🟢 呼叫後端取得「真實一週」成績數據
+        async function fetchWeeklyData() {
+            document.getElementById('weekly-loading-msg').classList.remove('hidden');
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getWeeklyReport', studentId: studentId, date: document.getElementById('daily-date').value }) });
+                const result = await response.json();
+                if (result.success) renderChart(result.labels, result.data);
+            } catch (error) {}
+            document.getElementById('weekly-loading-msg').classList.add('hidden');
+        }
+
+        let chartInstance = null;
+        function renderChart(labels, dataArray) {
+            if (chartInstance) chartInstance.destroy(); 
+            const ctx = document.getElementById('gradeChart').getContext('2d');
+            chartInstance = new Chart(ctx, { 
+                type: 'line', 
+                data: { labels: labels, datasets: [{ label: '當日各科平均分數', data: dataArray, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, tension: 0.3, fill: true, spanGaps: false }] },
+                options: { scales: { y: { min: 0, max: 100 } } }
+            });
+        }
+
         async function fetchDailyData(targetDate) {
             document.getElementById('loading-msg').classList.remove('hidden');
-            ['attendance-section', 'score-section', 'submission-section'].forEach(id => document.getElementById(id).innerHTML = '');
+            ['announcement-section', 'attendance-section', 'score-section', 'submission-section'].forEach(id => document.getElementById(id).innerHTML = '');
             document.getElementById('no-data-msg').classList.add('hidden');
 
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'getDailyReport', studentId: studentId, date: targetDate })
-                });
-
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getDailyReport', studentId: studentId, date: targetDate }) });
                 const result = await response.json();
                 document.getElementById('loading-msg').classList.add('hidden');
 
                 if (result.success) {
-                    const hasAtt = result.attendance && result.attendance.length > 0;
-                    const hasSco = result.scores && result.scores.length > 0;
-                    const hasSub = result.submissions && result.submissions.length > 0;
+                    if (!result.attendance.length && !result.scores.length && !result.submissions.length && !result.announcement) return document.getElementById('no-data-msg').classList.remove('hidden');
 
-                    if (!hasAtt && !hasSco && !hasSub) {
-                        document.getElementById('no-data-msg').classList.remove('hidden');
-                        return;
+                    // 🟢 渲染老師聯絡簿
+                    if (result.announcement) {
+                        document.getElementById('announcement-section').innerHTML = `
+                        <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-4 shadow-sm">
+                            <h4 class="text-sm font-bold text-yellow-700 mb-2 flex items-center"><i class="fas fa-bullhorn mr-2"></i> 老師叮嚀與聯絡事項</h4>
+                            <p class="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">${result.announcement.content}</p>
+                            <p class="text-xs text-yellow-600 mt-3 text-right">發布者：${result.announcement.teacher}</p>
+                        </div>`;
                     }
 
-                    // 1. 渲染繳交事項
-                    if (hasSub) {
-                        let html = `<h4 class="text-sm font-bold text-indigo-500 mb-2 border-b pb-1"><i class="fas fa-clipboard-list mr-2"></i>行政 / 物品繳交追蹤</h4>`;
+                    if (result.submissions.length) {
+                        let html = `<h4 class="text-sm font-bold text-indigo-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-clipboard-list mr-2"></i>行政繳交追蹤</h4>`;
                         result.submissions.forEach(rec => {
-                            let sColor, sIcon, sText;
-                            if (rec.status === 'done') { sColor = 'bg-green-100 text-green-700'; sIcon = 'fa-check-circle'; sText = '已完成'; } 
-                            else if (rec.status === 'pending') { sColor = 'bg-yellow-100 text-yellow-700'; sIcon = 'fa-exclamation-triangle'; sText = '未完成'; } 
-                            else { sColor = 'bg-red-100 text-red-700'; sIcon = 'fa-times-circle'; sText = '缺交'; }
-
-                            html += `
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center border-l-4 border-indigo-400">
-                                <h4 class="font-bold text-gray-800">${rec.itemName}</h4>
-                                <span class="${sColor} text-xs font-bold px-2 py-1 rounded-full"><i class="fas ${sIcon} mr-1"></i>${sText}</span>
-                            </div>`;
-                        });
-                        document.getElementById('submission-section').innerHTML = html;
+                            let sColor = rec.status === 'done' ? 'bg-green-100 text-green-700' : (rec.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
+                            let sText = rec.status === 'done' ? '已完成' : (rec.status === 'pending' ? '未完成' : '缺交');
+                            html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center border-l-4 border-indigo-400"><h4 class="font-bold text-gray-800">${rec.itemName}</h4><span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span></div>`;
+                        }); document.getElementById('submission-section').innerHTML = html;
                     }
 
-                    // 2. 渲染出缺席與評語
-                    if (hasAtt) {
+                    if (result.attendance.length) {
                         let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-user-check mr-2"></i>上課狀況與評語</h4>`;
                         result.attendance.forEach(rec => {
                             let sColor = rec.attendance === 'present' ? 'bg-green-100 text-green-700' : (rec.attendance === 'late' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
                             let sText = rec.attendance === 'present' ? '正常出席' : (rec.attendance === 'late' ? '遲到' : '缺席');
-                            html += `
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3">
-                                <div class="flex justify-between items-center mb-2">
-                                    <h4 class="font-bold text-gray-800 text-lg">${rec.course}</h4>
-                                    <span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span>
-                                </div>
-                                <div class="bg-gray-50 rounded p-3">
-                                    <p class="text-sm text-gray-700">${rec.comment || '無評語'}</p>
-                                </div>
-                            </div>`;
-                        });
-                        document.getElementById('attendance-section').innerHTML = html;
+                            html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3"><div class="flex justify-between items-center mb-2"><h4 class="font-bold text-gray-800 text-lg">${rec.course}</h4><span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span></div><div class="bg-gray-50 rounded p-3"><p class="text-sm text-gray-700">${rec.comment || '無評語'}</p></div></div>`;
+                        }); document.getElementById('attendance-section').innerHTML = html;
                     }
 
-                    // 3. 渲染考試成績
-                    if (hasSco) {
+                    if (result.scores.length) {
                         let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-marker mr-2"></i>測驗成績</h4>`;
-                        result.scores.forEach(rec => {
-                            html += `
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center">
-                                <div>
-                                    <span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">${rec.course}</span>
-                                    <h4 class="font-bold text-gray-800 mt-2">${rec.examName}</h4>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-gray-500">得分</p>
-                                    <p class="text-3xl font-black text-blue-600">${rec.score}</p>
-                                </div>
-                            </div>`;
-                        });
+                        result.scores.forEach(rec => { html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center"><div><span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">${rec.course}</span><h4 class="font-bold text-gray-800 mt-2">${rec.examName}</h4></div><div class="text-right"><p class="text-xs text-gray-500">得分</p><p class="text-3xl font-black text-blue-600">${rec.score}</p></div></div>`; });
                         document.getElementById('score-section').innerHTML = html;
                     }
-                } else {
-                    alert('❌ 資料獲取失敗：' + result.message);
                 }
-            } catch (error) {
-                document.getElementById('loading-msg').classList.add('hidden');
-                document.getElementById('attendance-section').innerHTML = '<span class="text-red-500">連線異常，請稍後再試。</span>';
-            }
+            } catch (error) { document.getElementById('attendance-section').innerHTML = '<span class="text-red-500">連線異常。</span>'; }
         }
-
-        // 🟢 假資料圖表繪製 (已修復加回)
-        let chartInstance = null;
-        function renderChart() {
-            if (chartInstance) return; 
-            const ctx = document.getElementById('gradeChart').getContext('2d');
-            chartInstance = new Chart(ctx, { 
-                type: 'line', 
-                data: {
-                    labels: ['週一', '週二', '週三', '週四', '週五'], 
-                    datasets: [{
-                        label: '綜合評分趨勢',
-                        data: [85, 90, 88, 92, 95],
-                        borderColor: 'rgba(59, 130, 246, 1)', 
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2, tension: 0.3, fill: true
-                    }]
-                }
-            });
-        }
-
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = 'login.html';
-        }
+        function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
     </script>
 </body>
 </html>
