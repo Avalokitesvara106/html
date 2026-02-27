@@ -3,36 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系統登入 - 班級管理系統</title>
+    <title>系統登入 - 智慧校務行政管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* 自訂動畫設定 */
         .glass-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 flex items-center justify-center min-h-screen font-sans p-4">
     
-    <div class="glass-card p-8 md:p-10 rounded-3xl shadow-xl w-full max-w-md border border-white">
+    <div class="glass-card p-6 md:p-10 rounded-3xl shadow-xl w-full max-w-md border border-white">
         
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-4 shadow-inner">
                 <i class="fas fa-graduation-cap text-3xl"></i>
             </div>
-            <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">
+            <h1 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">
                 校務行政管理系統
             </h1>
-            <p class="text-gray-500 font-medium">歡迎回來，請選擇身分並登入</p>
+            <p class="text-gray-500 font-medium text-sm">請選擇您的身分並登入</p>
         </div>
 
-        <div class="flex mb-8 bg-gray-100 p-1.5 rounded-2xl shadow-inner relative">
-            <button id="tab-teacher" onclick="setRole('teacher')" class="flex-1 py-2 text-center rounded-xl bg-white shadow text-blue-600 font-bold transition-all duration-200">老師</button>
-            <button id="tab-cadre" onclick="setRole('cadre')" class="flex-1 py-2 text-center rounded-xl text-gray-500 hover:text-gray-800 font-semibold transition-all duration-200">幹部</button>
-            <button id="tab-parent" onclick="setRole('parent')" class="flex-1 py-2 text-center rounded-xl text-gray-500 hover:text-gray-800 font-semibold transition-all duration-200">家長</button>
-            <button id="tab-student" onclick="setRole('student')" class="flex-1 py-2 text-center rounded-xl text-gray-500 hover:text-gray-800 font-semibold transition-all duration-200">學生</button>
+        <div class="flex mb-8 bg-gray-100 p-1.5 rounded-2xl shadow-inner gap-1 relative">
+            <button type="button" id="tab-teacher" onclick="setRole('teacher')" class="flex-1 py-2 sm:py-2.5 text-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg text-white font-bold transition-all duration-300 transform scale-105 ring-2 ring-blue-300 ring-offset-1 z-10">
+                <i class="fas fa-chalkboard-teacher block sm:inline mb-1 sm:mb-0 sm:mr-1 text-lg sm:text-base"></i><span class="text-xs sm:text-sm block sm:inline">老師</span>
+            </button>
+            <button type="button" id="tab-cadre" onclick="setRole('cadre')" class="flex-1 py-2 sm:py-2.5 text-center rounded-xl text-gray-500 hover:text-gray-800 font-medium transition-all duration-300 hover:bg-gray-200/80 z-0">
+                <i class="fas fa-user-shield block sm:inline mb-1 sm:mb-0 sm:mr-1 text-lg sm:text-base"></i><span class="text-xs sm:text-sm block sm:inline">幹部</span>
+            </button>
+            <button type="button" id="tab-parent" onclick="setRole('parent')" class="flex-1 py-2 sm:py-2.5 text-center rounded-xl text-gray-500 hover:text-gray-800 font-medium transition-all duration-300 hover:bg-gray-200/80 z-0">
+                <i class="fas fa-user-friends block sm:inline mb-1 sm:mb-0 sm:mr-1 text-lg sm:text-base"></i><span class="text-xs sm:text-sm block sm:inline">家長</span>
+            </button>
+            <button type="button" id="tab-student" onclick="setRole('student')" class="flex-1 py-2 sm:py-2.5 text-center rounded-xl text-gray-500 hover:text-gray-800 font-medium transition-all duration-300 hover:bg-gray-200/80 z-0">
+                <i class="fas fa-book-reader block sm:inline mb-1 sm:mb-0 sm:mr-1 text-lg sm:text-base"></i><span class="text-xs sm:text-sm block sm:inline">學生</span>
+            </button>
         </div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
@@ -82,6 +89,7 @@
         // ==========================================
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
 
+        // 🟢 強化版：動態切換按鈕 CSS 類別
         function setRole(role) {
             document.getElementById('role').value = role;
             const roles = ['teacher', 'cadre', 'parent', 'student'];
@@ -89,9 +97,11 @@
             roles.forEach(r => {
                 let tab = document.getElementById('tab-' + r);
                 if (r === role) {
-                    tab.className = "flex-1 py-2 text-center rounded-xl bg-white shadow text-blue-600 font-bold transition-all duration-200 transform scale-105";
+                    // 選中時：深藍漸層、白字、放大、加發光邊框
+                    tab.className = "flex-1 py-2 sm:py-2.5 text-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg text-white font-bold transition-all duration-300 transform scale-105 ring-2 ring-blue-300 ring-offset-1 z-10";
                 } else {
-                    tab.className = "flex-1 py-2 text-center rounded-xl text-gray-500 hover:text-gray-800 font-semibold transition-all duration-200 hover:bg-gray-200/50";
+                    // 沒選中時：透明背景、灰字、無放大
+                    tab.className = "flex-1 py-2 sm:py-2.5 text-center rounded-xl text-gray-500 hover:text-gray-800 font-medium transition-all duration-300 hover:bg-gray-200/80 z-0";
                 }
             });
         }
@@ -133,7 +143,6 @@
                     if (result.role !== role) {
                         showError("登入失敗：您選擇的身分與系統紀錄不符。");
                     } else {
-                        // 登入成功，儲存 Session
                         sessionStorage.setItem('isLoggedIn', 'true'); 
                         sessionStorage.setItem('userRole', result.role); 
                         sessionStorage.setItem('username', username);
@@ -150,19 +159,18 @@
                             sessionStorage.setItem('teacherSubjects', JSON.stringify(result.subjects || []));
                         }
 
-                        // 登入成功動畫
+                        // 登入成功視覺回饋
                         submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> 登入成功';
                         submitBtn.classList.replace('from-blue-600', 'from-green-500');
                         submitBtn.classList.replace('to-indigo-600', 'to-green-600');
 
-                        // 延遲跳轉以顯示成功動畫
                         setTimeout(() => {
                             if (role === 'teacher') window.location.href = 'teacher.html'; 
                             else if (role === 'cadre') window.location.href = 'cadre.html'; 
                             else if (role === 'student') window.location.href = 'student.html'; 
                             else window.location.href = 'parent.html';
                         }, 500);
-                        return; // 提前結束避免 finally 重置按鈕
+                        return; 
                     }
                 } else { 
                     showError(result.message || "帳號或密碼錯誤。"); 
@@ -178,4 +186,3 @@
     </script>
 </body>
 </html>
-
