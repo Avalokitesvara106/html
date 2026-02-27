@@ -1,274 +1,110 @@
-// ==========================================
-// 🚨 請填入您最新的 Google 試算表 ID
-// ==========================================
-const SHEET_ID = '1X0ni5pa7vixetF9tpCk_Fi2LCv5pKbmh16ZFi3ysS4s';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系統登入 - 校務行政管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800">校務行政管理系統</h1>
+            <p class="text-gray-500 mt-2">請登入以繼續</p>
+        </div>
 
-function getSafeDateString(val, tz) {
-  if (!val) return "";
-  if (val instanceof Date) { return Utilities.formatDate(val, tz, 'yyyy-MM-dd'); }
-  return val.toString().trim().replace(/\//g, '-').substring(0, 10);
-}
+        <div class="flex mb-6 bg-gray-200 rounded-lg p-1 text-sm">
+            <button id="tab-teacher" onclick="setRole('teacher')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all">老師</button>
+            <button id="tab-parent" onclick="setRole('parent')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">家長</button>
+            <button id="tab-cadre" onclick="setRole('cadre')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all">班級幹部</button>
+        </div>
 
-function doPost(e) {
-  try {
-    const params = JSON.parse(e.postData.contents);
-    const action = params.action;
-    let result = {};
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <input type="hidden" id="role" value="teacher">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">帳號</label>
+                <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            <div class="mb-6 relative">
+                <label class="block text-gray-700 text-sm font-bold mb-2">密碼</label>
+                <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                <button type="button" onclick="togglePassword()" class="absolute right-3 top-9 text-gray-400 hover:text-gray-600">
+                    <i id="eye-icon" class="fas fa-eye"></i>
+                </button>
+            </div>
+            <div id="error-message" class="hidden mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center"></div>
+            <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">登入</button>
+        </form>
+    </div>
 
-    if (action === 'login') {
-      result = handleLogin(params.username, params.password);
-    } else if (action === 'getDailyReport') {
-      result = getDailyReport(params.studentId, params.date);
-    } else if (action === 'getWeeklyReport') {  // 🟢 新增：獲取一週真實成績趨勢
-      result = getWeeklyReport(params.studentId, params.date);
-    } else if (action === 'loadAttendance') { 
-      result = loadAttendance(params.date, params.className, params.subject);
-    } else if (action === 'loadScores') { 
-      result = loadScores(params.date, params.className, params.subject, params.examName);
-    } else if (action === 'loadSubmissions') { 
-      result = loadSubmissions(params.date, params.className, params.itemName);
-    } else if (action === 'batchSaveAttendance') {  
-      result = batchSaveAttendance(params.records);
-    } else if (action === 'batchSaveScores') {  
-      result = batchSaveScores(params.records);
-    } else if (action === 'batchSaveSubmissions') { 
-      result = batchSaveSubmissions(params.records);
-    } else if (action === 'getSubmissionItems') { 
-      result = getSubmissionItems(params.date, params.className);
-    } else if (action === 'getExamNames') { 
-      result = getExamNames(params.date, params.className, params.subject);
-    } else {
-      result = { success: false, message: '未知的請求動作' };
-    }
+    <script>
+        // 🚨 請替換成您的 API 網址
+        const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
 
-    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.message })).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// 1. 登入驗證
-function handleLogin(username, password) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Users');
-  if (!sheet) return { success: false, message: '找不到 Users 工作表' };
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().trim() === username.trim() && data[i][1].toString().trim() === password.trim()) {
-      let rawRole = data[i][2].toString().trim().toLowerCase();
-      let role = 'teacher'; 
-      if (rawRole === 'parent' || rawRole === '家長') role = 'parent';
-      else if (rawRole === 'cadre' || rawRole === '幹部' || rawRole === '班級幹部') role = 'cadre';
-      else if (rawRole === 'teacher' || rawRole === '老師') role = 'teacher';
-
-      let response = { success: true, role: role, studentId: data[i][3] };
-      if (role === 'teacher' || role === 'cadre') {
-        response.classes = data[i][4] ? data[i][4].toString().split(',').map(s => s.trim()) : [];
-        response.subjects = data[i][5] ? data[i][5].toString().split(',').map(s => s.trim()) : [];
-      }
-      return response;
-    }
-  }
-  return { success: false, message: '帳號或密碼錯誤' };
-}
-
-// 2. 家長：獲取每日報表
-function getDailyReport(studentId, targetDate) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const attSheet = ss.getSheetByName('Attendance_Records');
-  const scoreSheet = ss.getSheetByName('Score_Records');
-  const subSheet = ss.getSheetByName('Submission_Records'); 
-  const tz = ss.getSpreadsheetTimeZone(); 
-
-  let attendanceRecords = [], scoreRecords = [], submissionRecords = [];
-
-  if (attSheet) {
-    const attData = attSheet.getDataRange().getValues();
-    for (let i = 1; i < attData.length; i++) {
-      if (attData[i][3].toString().trim() === studentId.toString().trim() && getSafeDateString(attData[i][0], tz) === targetDate.trim()) {
-        attendanceRecords.push({ course: attData[i][2].toString().trim(), attendance: attData[i][5].toString().trim(), comment: attData[i][6].toString().trim() });
-      }
-    }
-  }
-  if (scoreSheet) {
-    const scoreData = scoreSheet.getDataRange().getValues();
-    for (let i = 1; i < scoreData.length; i++) {
-      if (scoreData[i][4].toString().trim() === studentId.toString().trim() && getSafeDateString(scoreData[i][0], tz) === targetDate.trim()) {
-        scoreRecords.push({ course: scoreData[i][2].toString().trim(), examName: scoreData[i][3].toString().trim(), score: scoreData[i][6] !== "" ? scoreData[i][6] : "--" });
-      }
-    }
-  }
-  if (subSheet) {
-    const subData = subSheet.getDataRange().getValues();
-    for (let i = 1; i < subData.length; i++) {
-      let recDateStr = getSafeDateString(subData[i][0], tz);
-      let recStuId = subData[i][3].toString().trim(); 
-      if (recStuId === studentId.toString().trim() && recDateStr === targetDate.trim()) {
-        submissionRecords.push({ itemName: subData[i][2].toString().trim(), status: subData[i][5].toString().trim() });
-      }
-    }
-  }
-  return { success: true, attendance: attendanceRecords, scores: scoreRecords, submissions: submissionRecords };
-}
-
-// 🟢 2.5 家長：獲取一週真實成績圖表資料 (推算過去5天)
-function getWeeklyReport(studentId, targetDateStr) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const scoreSheet = ss.getSheetByName('Score_Records');
-  const tz = ss.getSpreadsheetTimeZone();
-  
-  let targetDate = new Date(targetDateStr);
-  let labels = [], chartData = [], dateStrs = [];
-  
-  // 建立過去5天的日期陣列
-  for (let i = 4; i >= 0; i--) {
-    let d = new Date(targetDate.getTime());
-    d.setDate(d.getDate() - i);
-    dateStrs.push(Utilities.formatDate(d, tz, 'yyyy-MM-dd'));
-    labels.push(Utilities.formatDate(d, tz, 'MM/dd'));
-    chartData.push(null);
-  }
-
-  if (scoreSheet) {
-    const data = scoreSheet.getDataRange().getValues();
-    let dailySums = {0:0, 1:0, 2:0, 3:0, 4:0};
-    let dailyCounts = {0:0, 1:0, 2:0, 3:0, 4:0};
-    
-    for (let r = 1; r < data.length; r++) {
-      let recDateStr = getSafeDateString(data[r][0], tz);
-      let recStuId = data[r][4].toString().trim();
-      
-      if (recStuId === studentId.toString().trim()) {
-        let idx = dateStrs.indexOf(recDateStr);
-        if (idx !== -1) {
-          let score = parseFloat(data[r][6]);
-          if (!isNaN(score)) {
-            dailySums[idx] += score;
-            dailyCounts[idx] += 1;
-          }
+        function setRole(role) {
+            document.getElementById('role').value = role;
+            ['teacher', 'parent', 'cadre'].forEach(r => {
+                let tab = document.getElementById('tab-' + r);
+                if (r === role) tab.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-semibold transition-all";
+                else tab.className = "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-semibold transition-all";
+            });
         }
-      }
-    }
-    // 計算每日平均分數
-    for (let i = 0; i < 5; i++) {
-      if (dailyCounts[i] > 0) chartData[i] = Math.round(dailySums[i] / dailyCounts[i]);
-    }
-  }
-  return { success: true, labels: labels, data: chartData };
-}
 
-// ==========================================
-// 📥 載入與 📤 儲存 函式群
-// ==========================================
-function loadAttendance(tDate, tClass, tSubj) { return _loadData(tDate, tClass, tSubj, null, 'Attendance_Records'); }
-function loadScores(tDate, tClass, tSubj, exam) { return _loadData(tDate, tClass, tSubj, exam, 'Score_Records'); }
-function loadSubmissions(targetDate, targetClass, itemName) { return _loadData(targetDate, targetClass, null, itemName, 'Submission_Records'); }
+        function togglePassword() {
+            const pwdInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+            pwdInput.type = pwdInput.type === 'password' ? 'text' : 'password';
+            eyeIcon.className = pwdInput.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        }
 
-function batchSaveAttendance(recs) { return _batchSave(recs, 'Attendance_Records'); }
-function batchSaveScores(recs) { return _batchSave(recs, 'Score_Records'); }
-function batchSaveSubmissions(records) { return _batchSave(records, 'Submission_Records'); }
+        async function handleLogin(event) {
+            event.preventDefault();
+            const role = document.getElementById('role').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submit-btn');
 
-function getSubmissionItems(targetDate, targetClass) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName('Submission_Records');
-  if (!sheet) return { success: true, items: [] };
-  const data = sheet.getDataRange().getValues(), tz = ss.getSpreadsheetTimeZone();
-  let items = new Set();
-  for (let i = 1; i < data.length; i++) {
-    if (getSafeDateString(data[i][0], tz) === targetDate && data[i][1].toString().trim() === targetClass && data[i][2].toString().trim() !== "") {
-      items.add(data[i][2].toString().trim());
-    }
-  }
-  return { success: true, items: Array.from(items) };
-}
+            errorMsg.classList.add('hidden');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>登入驗證中...'; submitBtn.disabled = true;
 
-function getExamNames(targetDate, targetClass, targetSubject) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName('Score_Records');
-  if (!sheet) return { success: true, exams: [] };
-  const data = sheet.getDataRange().getValues(), tz = ss.getSpreadsheetTimeZone();
-  let exams = new Set();
-  for (let i = 1; i < data.length; i++) {
-    if (getSafeDateString(data[i][0], tz) === targetDate && data[i][1].toString().trim() === targetClass && data[i][2].toString().trim() === targetSubject && data[i][3].toString().trim() !== "") {
-      exams.add(data[i][3].toString().trim());
-    }
-  }
-  return { success: true, exams: Array.from(exams) };
-}
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'login', username, password })
+                });
+                const result = await response.json();
 
-function _loadData(targetDate, targetClass, targetSubject, extraParam, sheetName) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const studentSheet = ss.getSheetByName('Students');
-  const recordSheet = ss.getSheetByName(sheetName);
-  if (!studentSheet || !recordSheet) return { success: false, message: '找不到工作表: ' + sheetName };
-  
-  const studentsData = studentSheet.getDataRange().getValues();
-  const recordsData = recordSheet.getDataRange().getValues();
-  const tz = ss.getSpreadsheetTimeZone(); 
-  let resultData = [];
-
-  for (let i = 1; i < studentsData.length; i++) {
-    if (!studentsData[i][0]) continue; 
-    let stuId = studentsData[i][0].toString().trim();
-    let stuName = studentsData[i][1].toString().trim();
-    let stuClass = studentsData[i][2] ? studentsData[i][2].toString().trim() : "";
-    if (stuClass !== targetClass.trim()) continue; 
-    
-    let existingRecord = null;
-    for (let j = 1; j < recordsData.length; j++) {
-      let recDateStr = getSafeDateString(recordsData[j][0], tz);
-      let recClass = recordsData[j][1].toString().trim();
-      let recStuId = recordsData[j][sheetName === 'Score_Records' ? 4 : 3].toString().trim();
-      let isMatch = (recDateStr === targetDate.trim() && recClass === targetClass.trim() && recStuId === stuId);
-      
-      if (isMatch) {
-          if (sheetName === 'Attendance_Records' && recordsData[j][2].toString().trim() === targetSubject.trim()) { existingRecord = { attendance: recordsData[j][5].toString().trim(), comment: recordsData[j][6].toString().trim() }; break; } 
-          else if (sheetName === 'Score_Records' && recordsData[j][2].toString().trim() === targetSubject.trim() && recordsData[j][3].toString().trim() === extraParam.trim()) { existingRecord = { score: recordsData[j][6] !== "" ? recordsData[j][6] : "" }; break; } 
-          else if (sheetName === 'Submission_Records' && recordsData[j][2].toString().trim() === extraParam.trim()) { existingRecord = { status: recordsData[j][5].toString().trim() }; break; }
-      }
-    }
-
-    if (sheetName === 'Attendance_Records') resultData.push(existingRecord ? { studentId: stuId, name: stuName, attendance: existingRecord.attendance, comment: existingRecord.comment, isSaved: true } : { studentId: stuId, name: stuName, attendance: 'present', comment: '', isSaved: false });
-    else if (sheetName === 'Score_Records') resultData.push(existingRecord ? { studentId: stuId, name: stuName, score: existingRecord.score, isSaved: true } : { studentId: stuId, name: stuName, score: '', isSaved: false });
-    else if (sheetName === 'Submission_Records') resultData.push(existingRecord ? { studentId: stuId, name: stuName, status: existingRecord.status, isSaved: true } : { studentId: stuId, name: stuName, status: 'pending', isSaved: false });
-  }
-  return { success: true, data: resultData };
-}
-
-function _batchSave(records, sheetName) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName(sheetName);
-  let data = sheet.getDataRange().getValues(); 
-  const tz = ss.getSpreadsheetTimeZone();
-
-  for (let r = 0; r < records.length; r++) {
-    let rec = records[r];
-    let rowIndex = -1;
-
-    for (let i = 1; i < data.length; i++) {
-      let recDateStr = getSafeDateString(data[i][0], tz);
-      let recClass = data[i][1].toString().trim();
-      let recStuId = data[i][sheetName === 'Score_Records' ? 4 : 3].toString().trim();
-      let isMatch = (recDateStr === rec.date && recClass === rec.className && recStuId === rec.studentId.toString());
-      
-      if (isMatch) {
-          if (sheetName === 'Attendance_Records' && data[i][2].toString().trim() === rec.subject) { rowIndex = i + 1; break; }
-          else if (sheetName === 'Score_Records' && data[i][2].toString().trim() === rec.subject && data[i][3].toString().trim() === rec.examName) { rowIndex = i + 1; break; }
-          else if (sheetName === 'Submission_Records' && data[i][2].toString().trim() === rec.itemName) { rowIndex = i + 1; break; }
-      }
-    }
-
-    if (rowIndex > -1) {
-        if (sheetName === 'Attendance_Records') { sheet.getRange(rowIndex, 6).setValue(rec.attendance); sheet.getRange(rowIndex, 7).setValue(rec.comment); data[rowIndex - 1][5] = rec.attendance; data[rowIndex - 1][6] = rec.comment; } 
-        else if (sheetName === 'Score_Records') { sheet.getRange(rowIndex, 7).setValue(rec.score); data[rowIndex - 1][6] = rec.score; } 
-        else if (sheetName === 'Submission_Records') { sheet.getRange(rowIndex, 6).setValue(rec.status); data[rowIndex - 1][5] = rec.status; }
-    } else {
-        let newRow, idStamp = new Date().getTime() + "-" + r;
-        if (sheetName === 'Attendance_Records') newRow = [rec.date, rec.className, rec.subject, rec.studentId, rec.name, rec.attendance, rec.comment, "ATT-" + idStamp];
-        else if (sheetName === 'Score_Records') newRow = [rec.date, rec.className, rec.subject, rec.examName, rec.studentId, rec.name, rec.score, "SCO-" + idStamp];
-        else if (sheetName === 'Submission_Records') newRow = [rec.date, rec.className, rec.itemName, rec.studentId, rec.name, rec.status, "SUB-" + idStamp];
-        
-        sheet.appendRow(newRow); data.push(newRow);
-    }
-  }
-  return { success: true, message: '儲存成功' };
-}
+                if (result.success) {
+                    if (result.role !== role) {
+                        errorMsg.innerText = "登入失敗：您選擇的身分與系統紀錄不符。";
+                        errorMsg.classList.remove('hidden');
+                    } else {
+                        sessionStorage.setItem('isLoggedIn', 'true');
+                        sessionStorage.setItem('userRole', result.role);
+                        sessionStorage.setItem('username', username);
+                        
+                        if (result.role === 'parent' && result.studentId) sessionStorage.setItem('studentId', result.studentId);
+                        if (result.role === 'teacher' || result.role === 'cadre') {
+                            sessionStorage.setItem('assignedClasses', JSON.stringify(result.classes || [])); 
+                            sessionStorage.setItem('teacherClasses', JSON.stringify(result.classes || []));  
+                            sessionStorage.setItem('teacherSubjects', JSON.stringify(result.subjects || []));
+                        }
+                        
+                        if (role === 'teacher') window.location.href = 'teacher.html';
+                        else if (role === 'cadre') window.location.href = 'cadre.html';
+                        else window.location.href = 'parent.html';
+                    }
+                } else {
+                    errorMsg.innerText = result.message || "帳號或密碼錯誤。"; errorMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorMsg.innerText = "系統連線異常。"; errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.innerText = "登入"; submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
