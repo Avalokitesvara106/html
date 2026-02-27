@@ -111,7 +111,14 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const dateInput = document.getElementById('daily-date');
-            dateInput.valueAsDate = new Date();
+            
+            // 使用本地時區設定今天的日期，避免時差問題
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            
             dateInput.addEventListener('change', (e) => { fetchDailyData(e.target.value); });
             fetchDailyData(dateInput.value); 
         });
@@ -143,12 +150,14 @@
 
             try {
                 const res = await fetch(API_URL, {
-                    method: 'POST', body: JSON.stringify({ action: 'submitLeave', date: date, stuClass: stuClass, stuId: studentId, stuName: stuName, leaveType: type, reason: reason })
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 加入 headers 預防 CORS
+                    body: JSON.stringify({ action: 'submitLeave', date: date, stuClass: stuClass, stuId: studentId, stuName: stuName, leaveType: type, reason: reason })
                 });
                 const result = await res.json();
                 if(result.success) {
                     alert(result.message); closeLeaveModal();
-                    if(document.getElementById('daily-date').value === date) fetchDailyData(date); // 重新整理畫面
+                    if(document.getElementById('daily-date').value === date) fetchDailyData(date); 
                 } else alert('❌ 失敗：' + result.message);
             } catch(e) { alert('連線異常'); } finally { btn.innerHTML = '送出申請'; btn.disabled = false; }
         }
@@ -156,10 +165,14 @@
         async function fetchWeeklyData() {
             document.getElementById('weekly-loading-msg').classList.remove('hidden');
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getWeeklyReport', studentId: studentId, date: document.getElementById('daily-date').value }) });
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'getWeeklyReport', studentId: studentId, date: document.getElementById('daily-date').value }) 
+                });
                 const result = await response.json();
                 if (result.success) renderChart(result.labels, result.data);
-            } catch (error) {}
+            } catch (error) { console.error("圖表資料讀取失敗:", error); }
             document.getElementById('weekly-loading-msg').classList.add('hidden');
         }
 
@@ -174,46 +187,69 @@
         }
 
         async function fetchDailyData(targetDate) {
-            document.getElementById('loading-msg').classList.remove('hidden');
+            const loadingMsg = document.getElementById('loading-msg');
+            loadingMsg.classList.remove('hidden');
+            
+            // 清空舊資料
             ['announcement-section', 'leave-section', 'attendance-section', 'score-section', 'submission-section'].forEach(id => document.getElementById(id).innerHTML = '');
             document.getElementById('no-data-msg').classList.add('hidden');
 
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getDailyReport', studentId: studentId, date: targetDate }) });
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'getDailyReport', studentId: studentId, date: targetDate }) 
+                });
+                
                 const result = await response.json();
-                document.getElementById('loading-msg').classList.add('hidden');
 
                 if (result.success) {
-                    if (!result.attendance.length && !result.scores.length && !result.submissions.length && !result.announcement && !result.leave) return document.getElementById('no-data-msg').classList.remove('hidden');
+                    // 安全讀取變數，若後端沒傳該欄位，預設為空陣列 []
+                    const attendance = result.attendance || [];
+                    const scores = result.scores || [];
+                    const submissions = result.submissions || [];
+                    const announcement = result.announcement;
+                    const leave = result.leave;
 
-                    if (result.announcement) {
-                        document.getElementById('announcement-section').innerHTML = `<div class="bg-yellow-50 rounded-xl border border-yellow-200 p-4 shadow-sm"><h4 class="text-sm font-bold text-yellow-700 mb-2 flex items-center"><i class="fas fa-bullhorn mr-2"></i> 老師叮嚀與聯絡事項</h4><p class="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">${result.announcement.content}</p><p class="text-xs text-yellow-600 mt-3 text-right">發布者：${result.announcement.teacher}</p></div>`;
+                    // 安全判斷是否完全沒有資料
+                    if (attendance.length === 0 && scores.length === 0 && submissions.length === 0 && !announcement && !leave) {
+                        return document.getElementById('no-data-msg').classList.remove('hidden');
                     }
-                    // 🟢 顯示請假單狀態
-                    if (result.leave) {
-                        document.getElementById('leave-section').innerHTML = `<div class="bg-blue-50 rounded-xl border border-blue-200 p-4 shadow-sm"><h4 class="text-sm font-bold text-blue-700 mb-2 flex items-center"><i class="fas fa-bed mr-2"></i> 本日請假紀錄</h4><p class="text-gray-800 font-bold mb-1">${result.leave.type}</p><p class="text-gray-600 text-sm">原因：${result.leave.reason}</p></div>`;
+
+                    if (announcement) {
+                        document.getElementById('announcement-section').innerHTML = `<div class="bg-yellow-50 rounded-xl border border-yellow-200 p-4 shadow-sm"><h4 class="text-sm font-bold text-yellow-700 mb-2 flex items-center"><i class="fas fa-bullhorn mr-2"></i> 老師叮嚀與聯絡事項</h4><p class="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">${announcement.content}</p><p class="text-xs text-yellow-600 mt-3 text-right">發布者：${announcement.teacher}</p></div>`;
                     }
-                    if (result.submissions.length) {
+                    if (leave) {
+                        document.getElementById('leave-section').innerHTML = `<div class="bg-blue-50 rounded-xl border border-blue-200 p-4 shadow-sm"><h4 class="text-sm font-bold text-blue-700 mb-2 flex items-center"><i class="fas fa-bed mr-2"></i> 本日請假紀錄</h4><p class="text-gray-800 font-bold mb-1">${leave.type}</p><p class="text-gray-600 text-sm">原因：${leave.reason}</p></div>`;
+                    }
+                    if (submissions.length > 0) {
                         let html = `<h4 class="text-sm font-bold text-indigo-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-clipboard-list mr-2"></i>行政繳交追蹤</h4>`;
-                        result.submissions.forEach(rec => {
+                        submissions.forEach(rec => {
                             let sColor = rec.status === 'done' ? 'bg-green-100 text-green-700' : (rec.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'); let sText = rec.status === 'done' ? '已完成' : (rec.status === 'pending' ? '未完成' : '缺交');
                             html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center border-l-4 border-indigo-400"><h4 class="font-bold text-gray-800">${rec.itemName}</h4><span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span></div>`;
                         }); document.getElementById('submission-section').innerHTML = html;
                     }
-                    if (result.attendance.length) {
+                    if (attendance.length > 0) {
                         let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-user-check mr-2"></i>上課狀況與評語</h4>`;
-                        result.attendance.forEach(rec => {
+                        attendance.forEach(rec => {
                             let sColor = rec.attendance === 'present' ? 'bg-green-100 text-green-700' : (rec.attendance === 'late' ? 'bg-yellow-100 text-yellow-700' : (rec.attendance === 'leave' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'));
                             let sText = rec.attendance === 'present' ? '正常' : (rec.attendance === 'late' ? '遲到' : (rec.attendance === 'leave' ? '請假' : '缺席'));
                             html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3"><div class="flex justify-between items-center mb-2"><h4 class="font-bold text-gray-800 text-lg">${rec.course}</h4><span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span></div><div class="bg-gray-50 rounded p-3"><p class="text-sm text-gray-700">${rec.comment || '無評語'}</p></div></div>`;
                         }); document.getElementById('attendance-section').innerHTML = html;
                     }
-                    if (result.scores.length) {
+                    if (scores.length > 0) {
                         let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-marker mr-2"></i>測驗成績</h4>`;
-                        result.scores.forEach(rec => { html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center"><div><span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">${rec.course}</span><h4 class="font-bold text-gray-800 mt-2">${rec.examName}</h4></div><div class="text-right"><p class="text-xs text-gray-500">得分</p><p class="text-3xl font-black text-blue-600">${rec.score}</p></div></div>`; }); document.getElementById('score-section').innerHTML = html;
+                        scores.forEach(rec => { html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center"><div><span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded">${rec.course}</span><h4 class="font-bold text-gray-800 mt-2">${rec.examName}</h4></div><div class="text-right"><p class="text-xs text-gray-500">得分</p><p class="text-3xl font-black text-blue-600">${rec.score}</p></div></div>`; }); document.getElementById('score-section').innerHTML = html;
                     }
+                } else {
+                    document.getElementById('attendance-section').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-lg">無法獲取資料：${result.message || '未知錯誤'}</div>`;
                 }
-            } catch (error) { document.getElementById('attendance-section').innerHTML = '<span class="text-red-500">連線異常。</span>'; }
+            } catch (error) { 
+                console.error("讀取資料失敗:", error); 
+                document.getElementById('attendance-section').innerHTML = '<div class="text-red-500 bg-red-50 p-4 rounded-lg text-sm">連線異常或資料解析失敗。請按 F12 查看主控台(Console)錯誤。</div>'; 
+            } finally {
+                loadingMsg.classList.add('hidden');
+            }
         }
         function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
     </script>
