@@ -375,14 +375,12 @@
                     document.getElementById('academic-content').value = result.content || "";
                     
                     const linkDiv = document.getElementById('academic-file-link');
-                    if(result.fileUrl) {
-                        // 🪄 魔法轉換：從 Google Drive 網址中擷取檔案 ID，並轉換為圖片直連網址
-                        let fileIdMatch = result.fileUrl.match(/\/d\/(.+?)\//);
-                        let fileId = fileIdMatch ? fileIdMatch[1] : '';
+                if(result.fileUrl) {
+                        // 🪄 改用官方縮圖 API (thumbnail) 來繞過 Google 阻擋
+                        let fileIdMatch = result.fileUrl.match(/[-\w]{25,}/);
+                        let fileId = fileIdMatch ? fileIdMatch[0] : '';
                         
-                        // 建立圖片標籤 (加上 onerror 防呆，如果傳的是 PDF 不是圖片，就會自動隱藏這個區塊)
-                        let imgTag = fileId ? `<div class="mt-3"><img src="https://drive.google.com/uc?export=view&id=${fileId}" class="max-h-60 rounded-lg shadow-sm border border-orange-200" onerror="this.style.display='none';"></div>` : '';
-                        
+                        let imgTag = fileId ? `<div class="mt-3"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-h-60 rounded-lg shadow-sm border border-orange-200" onerror="this.style.display='none';"></div>` : '';
                         linkDiv.innerHTML = `✅ 目前已有附件：<a href="${result.fileUrl}" target="_blank" class="text-orange-600 font-bold underline hover:text-orange-800">點此開啓原始檔案</a> <span class="text-xs text-gray-400 ml-2">(若重新上傳將會覆蓋)</span>${imgTag}`;
                     } else {
                         linkDiv.innerHTML = `<span class="text-gray-400">目前無附件</span>`;
@@ -615,4 +613,5 @@
     </script>
 </body>
 </html>
+
 
