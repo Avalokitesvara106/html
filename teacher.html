@@ -36,16 +36,17 @@
     <main class="flex-1 flex flex-col h-screen overflow-hidden pt-16 md:pt-0">
         <div class="flex-1 overflow-y-auto p-4 md:p-8">
             
-            <div class="flex mb-6 bg-gray-200 rounded-lg p-1 max-w-2xl">
-                <button id="tab-attendance" onclick="switchMode('attendance')" class="flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all"><i class="fas fa-user-check mr-1"></i> 出缺席與評語</button>
-                <button id="tab-score" onclick="switchMode('score')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-marker mr-1"></i> 考試成績登記</button>
-                <button id="tab-announcement" onclick="switchMode('announcement')" class="flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-bullhorn mr-1"></i> 班級聯絡簿</button>
+            <div class="flex flex-wrap gap-2 mb-6 bg-gray-200 rounded-lg p-1 max-w-3xl">
+                <button id="tab-attendance" onclick="switchMode('attendance')" class="flex-1 min-w-[120px] py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all"><i class="fas fa-user-check mr-1"></i> 出缺席/評語</button>
+                <button id="tab-score" onclick="switchMode('score')" class="flex-1 min-w-[120px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-marker mr-1"></i> 考試成績</button>
+                <button id="tab-announcement" onclick="switchMode('announcement')" class="flex-1 min-w-[120px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-bullhorn mr-1"></i> 聯絡簿</button>
+                <button id="tab-homeroom" onclick="switchMode('homeroom')" class="hidden flex-1 min-w-[120px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-crown text-yellow-500 mr-1"></i> 導師儀表板</button>
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">日期</label><input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></div>
-                    <div><label class="block text-sm font-medium text-gray-700 mb-1">班級</label><select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></select></div>
+                    <div id="classContainer"><label class="block text-sm font-medium text-gray-700 mb-1">班級</label><select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></select></div>
                     
                     <div id="subjectContainer">
                         <label class="block text-sm font-medium text-gray-700 mb-1">節次 / 科目</label>
@@ -55,7 +56,7 @@
                     </div>
                     
                     <div id="examNameContainer" class="hidden">
-                        <label class="block text-sm font-bold text-blue-600 mb-1">考試名稱 (可輸入或點選)</label>
+                        <label class="block text-sm font-bold text-blue-600 mb-1">考試名稱 (可點選或輸入)</label>
                         <input type="text" id="examNameInput" list="examNameList" placeholder="例: 第一單元" class="w-full border-blue-300 border-2 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
                         <datalist id="examNameList"></datalist>
                     </div>
@@ -63,7 +64,31 @@
                 </div>
             </div>
 
-            <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-6">
+            <div id="homeroom-container" class="hidden space-y-6">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h2 class="text-xl font-black text-gray-800" id="homeroom-title">班級導師儀表板</h2>
+                    <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full"><i class="fas fa-star mr-1"></i>導師專屬</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm border-t-4 border-red-500 p-5">
+                        <h3 class="font-bold text-red-600 mb-4 text-base border-b border-gray-100 pb-2"><i class="fas fa-exclamation-triangle mr-2"></i>異常出缺席</h3>
+                        <div id="hr-attendance-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">載入中...</div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border-t-4 border-yellow-500 p-5">
+                        <h3 class="font-bold text-yellow-600 mb-4 text-base border-b border-gray-100 pb-2"><i class="fas fa-clipboard-list mr-2"></i>未交與待加強</h3>
+                        <div id="hr-submission-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">載入中...</div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border-t-4 border-blue-500 p-5">
+                        <h3 class="font-bold text-blue-600 mb-4 text-base border-b border-gray-100 pb-2"><i class="fas fa-bed mr-2"></i>今日請假單</h3>
+                        <div id="hr-leave-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">載入中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-2">
                  <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-bullhorn text-blue-500 mr-2"></i>發布班級聯絡簿 / 佈告</h3>
                  <p class="text-sm text-gray-500 mb-2">系統已自動載入目前的聯絡簿內容，您可以直接在下方修改或補充。</p>
                  <textarea id="bulletin-content" rows="6" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500" placeholder="請輸入今日要提醒家長或學生的事項..."></textarea>
@@ -89,31 +114,45 @@
                     <button id="batch-save-btn" onclick="batchSave()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center hidden w-full sm:w-auto justify-center"><i class="fas fa-bolt mr-2"></i> 極速一鍵儲存</button>
                 </div>
             </div>
+
         </div>
     </main>
 
     <script>
-        // 🚨 您的 GAS 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
         if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'teacher') { alert('權限不足！'); window.location.href = 'login.html'; }
 
         let currentMode = 'attendance', studentData = [];
         const datePicker = document.getElementById('datePicker'), classSelect = document.getElementById('classSelect'), subjectSelect = document.getElementById('subjectSelect'), examNameInput = document.getElementById('examNameInput');
+        
+        // 🟢 讀取導師身分
+        const homeroomClass = sessionStorage.getItem('homeroom') || '';
 
-        // 🟢 初始化
         document.addEventListener('DOMContentLoaded', () => {
             datePicker.valueAsDate = new Date();
-            document.getElementById('teacher-name-display').innerText = sessionStorage.getItem('username') + " 老師";
+            
+            // 設定老師姓名標題
+            let titleText = sessionStorage.getItem('username') + " 老師";
+            if (homeroomClass) titleText += ` (👑 ${homeroomClass}班導師)`;
+            document.getElementById('teacher-name-display').innerText = titleText;
 
+            // 填充班級下拉選單
             const classes = JSON.parse(sessionStorage.getItem('teacherClasses') || "[]");
             classes.forEach(c => classSelect.add(new Option(c, c)));
 
-            // 首次載入課表
-            fetchSubjectSchedule();
+            // 🟢 如果是導師，解鎖儀表板並設為預設畫面
+            if (homeroomClass) {
+                document.getElementById('tab-homeroom').classList.remove('hidden');
+                document.getElementById('homeroom-title').innerText = `${homeroomClass}班 導師儀表板`;
+                switchMode('homeroom'); // 預設跳到儀表板
+            } else {
+                fetchSubjectSchedule(); // 若非導師，載入一般課表
+            }
         });
 
-        // 🟢 動態載入課表 API
+        // 動態載入課表 API
         async function fetchSubjectSchedule() {
+            if (currentMode === 'homeroom') return; // 導師儀表板模式不需要下拉選單
             const date = datePicker.value;
             const className = classSelect.value;
             if (!date || !className) return;
@@ -122,28 +161,19 @@
             subjectSelect.disabled = true;
 
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'getSchedule', date: date, className: className })
-                });
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getSchedule', date: date, className: className }) });
                 const result = await response.json();
+                subjectSelect.innerHTML = ''; 
 
-                subjectSelect.innerHTML = ''; // 清空選項
-
-                // 1. 加入當日課表 (與風紀股長連動)
                 if (result.success && !result.isWeekend && result.schedule.length > 0) {
                     const optGroup1 = document.createElement('optgroup');
                     optGroup1.label = "📋 當日課表 (連動風紀點名)";
-                    result.schedule.forEach(item => {
-                        const val = `${item.period} - ${item.subject}`;
-                        optGroup1.appendChild(new Option(val, val));
-                    });
+                    result.schedule.forEach(item => { optGroup1.appendChild(new Option(`${item.period} - ${item.subject}`, `${item.period} - ${item.subject}`)); });
                     subjectSelect.appendChild(optGroup1);
                 } else {
                     subjectSelect.add(new Option("今日無預設課表", ""));
                 }
 
-                // 2. 加入老師的專屬科目 (備用)
                 const teacherSubjs = JSON.parse(sessionStorage.getItem('teacherSubjects') || "[]");
                 if (teacherSubjs.length > 0) {
                     const optGroup2 = document.createElement('optgroup');
@@ -151,20 +181,17 @@
                     teacherSubjs.forEach(s => optGroup2.appendChild(new Option(s, s)));
                     subjectSelect.appendChild(optGroup2);
                 }
-
-            } catch (e) {
-                subjectSelect.innerHTML = '<option value="">課表載入失敗</option>';
-            } finally {
-                subjectSelect.disabled = false;
-                if (currentMode === 'score') fetchExistingExams();
-            }
+            } catch (e) { subjectSelect.innerHTML = '<option value="">課表載入失敗</option>'; } 
+            finally { subjectSelect.disabled = false; if (currentMode === 'score') fetchExistingExams(); }
         }
 
-        // 🟢 監聽器切分：只有換日期或換班級時，才需要重新抓課表
+        // 監聽器
         [datePicker, classSelect].forEach(input => {
             input.addEventListener('change', () => {
                 resetTableState();
-                fetchSubjectSchedule(); // 重新抓取課表
+                if (currentMode === 'homeroom') loadHomeroomOverview();
+                else fetchSubjectSchedule(); 
+                
                 if (currentMode === 'announcement') loadBulletin();
             });
         });
@@ -205,24 +232,37 @@
             currentMode = mode; resetTableState();
             document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">請重新載入資料</td></tr>';
 
-            const tabAtt = document.getElementById('tab-attendance'), tabScore = document.getElementById('tab-score'), tabAnn = document.getElementById('tab-announcement');
-            const examContainer = document.getElementById('examNameContainer'), subjContainer = document.getElementById('subjectContainer'), tableContainer = document.getElementById('table-container'), bulletinContainer = document.getElementById('bulletin-container');
+            const tabs = ['attendance', 'score', 'announcement', 'homeroom'];
+            const classContainer = document.getElementById('classContainer'), subjContainer = document.getElementById('subjectContainer'), examContainer = document.getElementById('examNameContainer');
+            const tableContainer = document.getElementById('table-container'), bulletinContainer = document.getElementById('bulletin-container'), hrContainer = document.getElementById('homeroom-container');
 
-            [tabAtt, tabScore, tabAnn].forEach(t => t.className = "flex-1 py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all");
+            // 隱藏所有特定區域，還原按鈕樣式
+            tabs.forEach(t => {
+                let el = document.getElementById(`tab-${t}`);
+                if(el) el.className = "flex-1 min-w-[120px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all";
+            });
+            tableContainer.classList.add('hidden'); bulletinContainer.classList.add('hidden'); hrContainer.classList.add('hidden');
             
-            if (mode === 'attendance') {
-                tabAtt.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all";
-                examContainer.classList.add('hidden'); subjContainer.classList.remove('hidden');
-                tableContainer.classList.remove('hidden'); bulletinContainer.classList.add('hidden');
-            } else if (mode === 'score') {
-                tabScore.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all";
-                examContainer.classList.remove('hidden'); subjContainer.classList.remove('hidden');
-                tableContainer.classList.remove('hidden'); bulletinContainer.classList.add('hidden'); fetchExistingExams();
-            } else if (mode === 'announcement') {
-                tabAnn.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all";
-                examContainer.classList.add('hidden'); subjContainer.classList.add('hidden');
-                tableContainer.classList.add('hidden'); bulletinContainer.classList.remove('hidden');
-                loadBulletin();
+            let activeTab = document.getElementById(`tab-${mode}`);
+            if(activeTab) activeTab.className = "flex-1 min-w-[120px] py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all";
+
+            // 🟢 切換顯示邏輯
+            if (mode === 'homeroom') {
+                classContainer.classList.add('hidden'); subjContainer.classList.add('hidden'); examContainer.classList.add('hidden');
+                hrContainer.classList.remove('hidden');
+                loadHomeroomOverview(); // 自動載入儀表板資料
+            } 
+            else if (mode === 'attendance') {
+                classContainer.classList.remove('hidden'); subjContainer.classList.remove('hidden'); examContainer.classList.add('hidden');
+                tableContainer.classList.remove('hidden'); fetchSubjectSchedule();
+            } 
+            else if (mode === 'score') {
+                classContainer.classList.remove('hidden'); subjContainer.classList.remove('hidden'); examContainer.classList.remove('hidden');
+                tableContainer.classList.remove('hidden'); fetchSubjectSchedule();
+            } 
+            else if (mode === 'announcement') {
+                classContainer.classList.remove('hidden'); subjContainer.classList.add('hidden'); examContainer.classList.add('hidden');
+                bulletinContainer.classList.remove('hidden'); loadBulletin();
             }
             renderTableHeader();
         }
@@ -234,10 +274,66 @@
             html += `<th class="p-4 text-sm font-semibold text-gray-600 text-center w-24">操作</th>`;
             tr.innerHTML = html; document.getElementById('tableHeader').innerHTML = ''; document.getElementById('tableHeader').appendChild(tr);
         }
-        renderTableHeader(); 
 
-        function executeLoad() { if (currentMode === 'announcement') loadBulletin(); else loadStudentList(); }
+        function executeLoad() { 
+            if (currentMode === 'homeroom') loadHomeroomOverview();
+            else if (currentMode === 'announcement') loadBulletin(); 
+            else loadStudentList(); 
+        }
 
+        // ==========================================
+        // 👑 導師儀表板資料讀取與渲染
+        // ==========================================
+        async function loadHomeroomOverview() {
+            const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true;
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHomeroomOverview', date: datePicker.value, className: homeroomClass }) });
+                const result = await response.json();
+                if (result.success) renderHomeroom(result.data);
+                else alert('讀取失敗：'+result.message);
+            } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入儀表板`; btn.disabled = false; }
+        }
+
+        function renderHomeroom(data) {
+            // 1. 出缺席
+            const attList = document.getElementById('hr-attendance-list');
+            if (data.abnormalAttendance.length === 0) attList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 今日全班出席正常</p>';
+            else {
+                let html = '';
+                data.abnormalAttendance.forEach(a => {
+                    let badge = a.status === 'absent' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺席</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">遲到</span>';
+                    html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${a.studentId}</span>${a.name} <span class="text-gray-400 text-xs ml-1">(${a.subject})</span></div>${badge}</div>`;
+                });
+                attList.innerHTML = html;
+            }
+
+            // 2. 未交物品
+            const subList = document.getElementById('hr-submission-list');
+            if (data.missingSubmissions.length === 0) subList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 尚無未交或待加強項目</p>';
+            else {
+                let html = '';
+                data.missingSubmissions.forEach(s => {
+                    let badge = s.status === 'missing' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺交/未掃</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">未交/待加強</span>';
+                    html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${s.studentId}</span>${s.name}</div><div class="text-xs text-gray-500 mt-0.5">${s.itemName} ${s.date !== datePicker.value ? '<span class="text-red-400">(舊欠)</span>' : ''}</div></div>${badge}</div>`;
+                });
+                subList.innerHTML = html;
+            }
+
+            // 3. 請假單
+            const leaveList = document.getElementById('hr-leave-list');
+            if (data.leaveRequests.length === 0) leaveList.innerHTML = '<p class="text-gray-500 bg-gray-50 p-3 rounded-lg text-center font-bold">今日無請假紀錄</p>';
+            else {
+                let html = '';
+                data.leaveRequests.forEach(l => {
+                    html += `<div class="border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="flex justify-between mb-1"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${l.studentId}</span>${l.name}</div><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">${l.type}</span></div><div class="text-xs text-gray-500 bg-gray-50 p-1.5 rounded">事由: ${l.reason}</div></div>`;
+                });
+                leaveList.innerHTML = html;
+            }
+        }
+
+        // ==========================================
+        // 其他原有功能
+        // ==========================================
         async function loadBulletin() {
             const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true;
             try {
