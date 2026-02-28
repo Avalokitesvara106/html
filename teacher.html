@@ -73,6 +73,13 @@
             <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-2">
                  <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-bullhorn text-blue-500 mr-2"></i>發布班級聯絡簿 / 佈告</h3>
                  <textarea id="bulletin-content" rows="6" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500" placeholder="請輸入今日要提醒家長或學生的事項..."></textarea>
+                 
+                 <div class="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                     <label class="block text-sm font-bold text-gray-700 mb-2"><i class="fas fa-paperclip mr-1"></i>附加檔案 (照片或講義，上限 5MB)</label>
+                     <input type="file" id="bulletin-file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
+                     <div id="bulletin-file-link" class="mt-2 text-sm"></div>
+                 </div>
+
                  <div class="mt-4 flex justify-end"><button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告</button></div>
             </div>
 
@@ -385,10 +392,78 @@
 
         async function loadHomeroomOverview() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHomeroomOverview', date: datePicker.value, className: homeroomClass }) }); const result = await response.json(); if (result.success) renderHomeroom(result.data); else alert('失敗：'+result.message); } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
         function renderHomeroom(data) { const attList = document.getElementById('hr-attendance-list'); if (data.abnormalAttendance.length === 0) attList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 今日無異常</p>'; else { let html = ''; data.abnormalAttendance.forEach(a => { let badge = a.status === 'absent' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺席</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">遲到</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${a.studentId}</span>${a.name} <span class="text-gray-400 text-xs ml-1">(${a.subject})</span></div>${badge}</div>`; }); attList.innerHTML = html; } const subList = document.getElementById('hr-submission-list'); if (data.missingSubmissions.length === 0) subList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 尚無未交項目</p>'; else { let html = ''; data.missingSubmissions.forEach(s => { let badge = s.status === 'missing' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺交/未掃</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">未交/待加強</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${s.studentId}</span>${s.name}</div><div class="text-xs text-gray-500 mt-0.5">${s.itemName} ${s.date !== datePicker.value ? '<span class="text-red-400">(舊欠)</span>' : ''}</div></div>${badge}</div>`; }); subList.innerHTML = html; } const leaveList = document.getElementById('hr-leave-list'); if (data.leaveRequests.length === 0) leaveList.innerHTML = '<p class="text-gray-500 bg-gray-50 p-3 rounded-lg text-center font-bold">無請假紀錄</p>'; else { let html = ''; data.leaveRequests.forEach(l => { html += `<div class="border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="flex justify-between mb-1"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${l.studentId}</span>${l.name}</div><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">${l.type}</span></div><div class="text-xs text-gray-500 bg-gray-50 p-1.5 rounded">事由: ${l.reason}</div></div>`; }); leaveList.innerHTML = html; } }
-        async function loadBulletin() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) }); const result = await response.json(); if(result.success) document.getElementById('bulletin-content').value = result.content || ""; } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
-        async function saveBulletin() { const content = document.getElementById('bulletin-content').value; if(!content.trim()) return alert("請輸入內容！"); const btn = document.getElementById('save-bulletin-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: datePicker.value, className: classSelect.value, content: content, teacherName: sessionStorage.getItem('username') }) }); const result = await res.json(); if(result.success) alert('🎉 發布成功！'); } catch(e){} finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; } }
+        async function loadBulletin() { 
+            const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; 
+            try { 
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) }); 
+                const result = await response.json(); 
+                if(result.success) {
+                    document.getElementById('bulletin-content').value = result.content || ""; 
+                    // 🟢 顯示已上傳的附件連結
+                    const linkDiv = document.getElementById('bulletin-file-link');
+                    if(result.fileUrl) {
+                        linkDiv.innerHTML = `✅ 目前附件：<a href="${result.fileUrl}" target="_blank" class="text-blue-600 font-bold underline hover:text-blue-800">點此查看檔案</a> <span class="text-xs text-gray-400 ml-2">(若重新上傳將會覆蓋)</span>`;
+                    } else {
+                        linkDiv.innerHTML = `<span class="text-gray-400">目前無附件</span>`;
+                    }
+                }
+            } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } 
+        }
 
+        async function saveBulletin() { 
+            const content = document.getElementById('bulletin-content').value; 
+            if(!content.trim()) return alert("請輸入內容！"); 
+            
+            // 🟢 處理檔案讀取
+            const fileInput = document.getElementById('bulletin-file');
+            const file = fileInput.files[0];
+            const btn = document.getElementById('save-bulletin-btn'); 
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 上傳與發布中... (可能需要幾秒鐘)`; 
+            btn.disabled = true; 
+
+            let payload = { 
+                action: 'saveAnnouncement', 
+                date: datePicker.value, 
+                className: classSelect.value, 
+                content: content, 
+                teacherName: sessionStorage.getItem('username') 
+            };
+
+            // 如果有選檔案，就進行 Base64 轉換
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { // 限制 5MB
+                    alert("檔案請勿超過 5MB！");
+                    btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false;
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    payload.fileData = e.target.result.split(',')[1]; // 取出 base64 編碼部分
+                    payload.fileName = file.name;
+                    payload.mimeType = file.type;
+                    await sendBulletinRequest(payload, btn);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                await sendBulletinRequest(payload, btn);
+            }
+        }
+
+        async function sendBulletinRequest(payload, btn) {
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                const result = await res.json(); 
+                if(result.success) {
+                    alert('🎉 發布成功！'); 
+                    document.getElementById('bulletin-file').value = ''; // 清空選擇的檔案
+                    loadBulletin(); // 重新載入顯示新的連結
+                } else alert('失敗：'+result.message); 
+            } catch(e){ alert("連線異常"); } finally { 
+                btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; 
+            } 
+        }
         function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
     </script>
 </body>
 </html>
+
