@@ -66,7 +66,19 @@
             </div>
         </section>
 
-        <section id="section-academic" class="hidden"><div class="bg-white rounded-xl shadow-sm border border-orange-100 p-5"><h3 class="font-bold text-orange-600 mb-4 border-b border-orange-100 pb-2"><i class="fas fa-pen-nib mr-2"></i>發布班級聯絡簿</h3><textarea id="academic-content" rows="6" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-orange-400 outline-none mb-4" placeholder="請輸入今日作業、明日考試與攜帶物品..."></textarea><button id="btn-academic-submit" onclick="submitAcademic()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-orange-600 transition"><i class="fas fa-paper-plane mr-2"></i> 發布至班級看板</button></div></section>
+        <section id="section-academic" class="hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-orange-100 p-5">
+                <h3 class="font-bold text-orange-600 mb-4 border-b border-orange-100 pb-2"><i class="fas fa-pen-nib mr-2"></i>發布班級聯絡簿</h3>
+                <textarea id="academic-content" rows="6" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-orange-400 outline-none mb-4" placeholder="請輸入今日作業、明日考試與攜帶物品..."></textarea>
+                
+                <div class="mb-4 bg-orange-50 p-3 rounded-lg border border-orange-100">
+                    <label class="block text-sm font-bold text-orange-700 mb-2"><i class="fas fa-camera mr-1"></i>上傳黑板照片 (上限 5MB)</label>
+                    <input type="file" id="academic-file" accept="image/*,.pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-white file:text-orange-600 hover:file:bg-orange-100 cursor-pointer">
+                </div>
+
+                <button id="btn-academic-submit" onclick="submitAcademic()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-orange-600 transition"><i class="fas fa-paper-plane mr-2"></i> 上傳並發布</button>
+            </div>
+        </section>
         <section id="section-hygiene" class="hidden"><div class="bg-white rounded-xl shadow-sm border border-teal-100 p-5"><div class="flex justify-between items-center mb-4 border-b border-teal-100 pb-2"><h3 class="font-bold text-teal-600"><i class="fas fa-broom mr-2"></i>打掃工作核實</h3><button id="btn-hygiene-load" onclick="loadSubData('hygiene')" class="bg-teal-50 text-teal-600 font-bold py-1.5 px-3 rounded-lg border border-teal-200 hover:bg-teal-100 text-sm">載入名單</button></div><div id="hygiene-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div><button id="btn-hygiene-save" onclick="saveSubData('hygiene')" class="hidden w-full bg-teal-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-teal-700 transition"><i class="fas fa-save mr-2"></i> 儲存打掃紀錄</button></div></section>
         <section id="section-it" class="hidden"><div class="bg-white rounded-xl shadow-sm border border-purple-100 p-5"><div class="flex justify-between items-center mb-4 border-b border-purple-100 pb-2"><h3 class="font-bold text-purple-600"><i class="fas fa-mobile-alt mr-2"></i>手機繳交狀況</h3><button id="btn-it-load" onclick="loadSubData('it')" class="bg-purple-50 text-purple-600 font-bold py-1.5 px-3 rounded-lg border border-purple-200 hover:bg-purple-100 text-sm">載入名單</button></div><div id="it-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div><button id="btn-it-save" onclick="saveSubData('it')" class="hidden w-full bg-purple-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-purple-700 transition"><i class="fas fa-save mr-2"></i> 儲存手機繳交</button></div></section>
         <section id="section-discipline" class="hidden"><div class="bg-white rounded-xl shadow-sm border border-red-100 p-5"><div id="discipline-schedule-area"><div class="flex justify-between items-center mb-3 border-b border-red-100 pb-2"><h3 class="font-bold text-red-600"><i class="fas fa-list-alt mr-2"></i>選擇點名節次</h3><button onclick="fetchSchedule()" class="text-red-500 text-sm hover:text-red-700 font-bold"><i class="fas fa-sync-alt"></i> 重新整理</button></div><div id="schedule-list" class="flex flex-col gap-2 mb-4"><p class="text-center text-gray-400 text-sm py-4">讀取課表中...</p></div><div class="mt-4 pt-3 border-t border-gray-100 flex gap-2"><input type="text" id="manual-period" placeholder="自訂(如:第9節)" class="flex-1 bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-sm outline-none"><input type="text" id="manual-subject" placeholder="科目名稱" class="flex-1 bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-sm outline-none"><button onclick="startManualAttendance()" class="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-200 shadow-sm text-sm font-bold hover:bg-red-100">建立</button></div></div><div id="discipline-attendance-area" class="hidden"><div class="flex justify-between items-center mb-4 border-b border-red-100 pb-2"><h3 class="font-bold text-red-600"><i class="fas fa-user-clock mr-2"></i><span id="current-attendance-title">出缺席點名</span></h3><button onclick="closeAttendanceArea()" class="bg-gray-100 text-gray-600 font-bold py-1 px-3 rounded-lg border border-gray-200 hover:bg-gray-200 text-sm shadow-sm"><i class="fas fa-arrow-left mr-1"></i> 返回</button></div><div id="discipline-list" class="mb-4 max-h-[60vh] overflow-y-auto"></div><button id="btn-discipline-save" onclick="saveDiscipline()" class="hidden w-full bg-red-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-red-700 transition flex justify-center items-center"><i class="fas fa-save mr-2"></i> 儲存出缺席紀錄</button></div></div></section>
@@ -116,8 +128,55 @@
         function setAttendance(idx, s) { if (attendanceData[idx].attendance === 'leave' && !confirm('覆蓋請假？')) return; attendanceData[idx].attendance = s; renderDisciplineList(); }
         async function saveDiscipline() { const btn = document.getElementById('btn-discipline-save'); btn.disabled = true; const records = attendanceData.map(st => ({ date: document.getElementById('work-date').value, className: stuClass, subject: `${currentPeriod} - ${currentSubject}`, studentId: st.studentId, name: st.name, attendance: st.attendance, comment: '' })); try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'batchSaveAttendance', records }) }); const result = await res.json(); if (result.success) { alert('儲存成功！'); closeAttendanceArea(); } else alert('失敗'); } catch (e) {} finally { btn.disabled = false; } }
 
-        async function submitAcademic() { const c = document.getElementById('academic-content').value.trim(); if(!c) return alert('請輸入內容'); const btn = document.getElementById('btn-academic-submit'); btn.disabled = true; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: document.getElementById('work-date').value, className: stuClass, content: c, teacherName: `${cadreTitle} ${stuName}` }) }); const result = await res.json(); if(result.success) { alert('發布成功！'); document.getElementById('academic-content').value = ''; } } catch(e){} finally { btn.disabled = false; } }
+        async function submitAcademic() { 
+            const c = document.getElementById('academic-content').value.trim(); 
+            if(!c) return alert('請輸入內容'); 
+            
+            const fileInput = document.getElementById('academic-file');
+            const file = fileInput.files[0];
+            const btn = document.getElementById('btn-academic-submit'); 
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 上傳發布中...`; btn.disabled = true; 
 
+            let payload = { 
+                action: 'saveAnnouncement', 
+                date: document.getElementById('work-date').value, 
+                className: stuClass, 
+                content: c, 
+                teacherName: `${cadreTitle} ${stuName}` 
+            };
+
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { 
+                    alert("檔案請勿超過 5MB！");
+                    btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 上傳並發布`; btn.disabled = false;
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    payload.fileData = e.target.result.split(',')[1]; 
+                    payload.fileName = file.name;
+                    payload.mimeType = file.type;
+                    await sendAcademicRequest(payload, btn);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                await sendAcademicRequest(payload, btn);
+            }
+        }
+
+        async function sendAcademicRequest(payload, btn) {
+            try { 
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
+                const result = await res.json(); 
+                if(result.success) { 
+                    alert('🎉 發布成功！'); 
+                    document.getElementById('academic-content').value = ''; 
+                    document.getElementById('academic-file').value = '';
+                } 
+            } catch(e){} finally { 
+                btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 上傳並發布`; btn.disabled = false; 
+            } 
+        }
         // ==========================================
         // 🟢 模組三：物品繳交 (升級免交與批次派發功能)
         // ==========================================
@@ -238,3 +297,4 @@
     </script>
 </body>
 </html>
+
