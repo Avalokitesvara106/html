@@ -102,7 +102,7 @@
     </div>
 
     <script>
-        // 請確認這個 API_URL 是您最新發布的 GAS 網址
+        // 🚨 請確認這個 API_URL 是您最新發布的 GAS 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
         const studentId = sessionStorage.getItem('studentId');
         const stuName = sessionStorage.getItem('studentName');
@@ -113,14 +113,11 @@
             window.location.href = 'login.html'; 
         }
 
-        // 因為 HTML 結構已經修正，這裡的賦值不會再導致 ID 消失報錯了
         document.getElementById('display-student-name').innerText = stuName || "學生";
         document.getElementById('display-student-id').innerText = `(${studentId})`;
 
         document.addEventListener('DOMContentLoaded', () => {
             const dateInput = document.getElementById('daily-date');
-            
-            // 使用本地時區設定今天的日期，避免時差問題
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -161,7 +158,7 @@
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST', 
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 加入 headers 預防 CORS
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'submitLeave', date: date, stuClass: stuClass, stuId: studentId, stuName: stuName, leaveType: type, reason: reason })
                 });
                 const result = await res.json();
@@ -236,54 +233,77 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    // 安全讀取變數，若後端沒傳該欄位，預設為空陣列 []
                     const attendance = result.attendance || [];
                     const scores = result.scores || [];
                     const submissions = result.submissions || [];
                     const announcement = result.announcement;
                     const leave = result.leave;
 
-                    // 安全判斷是否完全沒有資料
                     if (attendance.length === 0 && scores.length === 0 && submissions.length === 0 && !announcement && !leave) {
                         return document.getElementById('no-data-msg').classList.remove('hidden');
                     }
 
+                    // 🟢 渲染聯絡簿與圖片附件
                     if (announcement) {
-                        document.getElementById('announcement-section').innerHTML = `<div class="bg-yellow-50 rounded-xl border border-yellow-200 p-4 shadow-sm"><h4 class="text-sm font-bold text-yellow-700 mb-2 flex items-center"><i class="fas fa-bullhorn mr-2"></i> 老師叮嚀與聯絡事項</h4><p class="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">${announcement.content}</p><p class="text-xs text-yellow-600 mt-3 text-right">發布者：${announcement.teacher}</p></div>`;
+                        let attachmentHtml = '';
+                        if (announcement.fileUrl) {
+                            // 擷取 ID 以轉換為直連圖片
+                            let fileIdMatch = announcement.fileUrl.match(/\/d\/(.+?)\//);
+                            let fileId = fileIdMatch ? fileIdMatch[1] : '';
+                            
+                            // 建立圖片標籤，若載入失敗(例如是PDF檔)則自動隱藏圖片
+                            let imgTag = fileId ? `<div class="mt-3 text-center"><img src="https://drive.google.com/uc?export=view&id=${fileId}" class="max-w-full max-h-80 rounded-lg shadow-md border border-yellow-200 mx-auto" onerror="this.style.display='none';"></div>` : '';
+                            
+                            attachmentHtml = `
+                                <div class="mt-4 pt-3 border-t border-yellow-200">
+                                    <p class="text-sm font-bold text-yellow-800 mb-1"><i class="fas fa-paperclip mr-1"></i>本日附件：<a href="${announcement.fileUrl}" target="_blank" class="text-blue-600 underline hover:text-blue-800">點此開啟原始檔案</a></p>
+                                    ${imgTag}
+                                </div>`;
+                        }
+
+                        document.getElementById('announcement-section').innerHTML = `
+                            <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-4 shadow-sm">
+                                <h4 class="text-sm font-bold text-yellow-700 mb-2 flex items-center"><i class="fas fa-bullhorn mr-2"></i> 老師叮嚀與聯絡事項</h4>
+                                <p class="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">${announcement.content}</p>
+                                ${attachmentHtml}
+                                <p class="text-xs text-yellow-600 mt-3 text-right">發布者：${announcement.teacher}</p>
+                            </div>`;
                     }
+
                     if (leave) {
                         document.getElementById('leave-section').innerHTML = `<div class="bg-blue-50 rounded-xl border border-blue-200 p-4 shadow-sm"><h4 class="text-sm font-bold text-blue-700 mb-2 flex items-center"><i class="fas fa-bed mr-2"></i> 本日請假紀錄</h4><p class="text-gray-800 font-bold mb-1">${leave.type}</p><p class="text-gray-600 text-sm">原因：${leave.reason}</p></div>`;
                     }
-if (submissions.length > 0) {
-    let html = `<h4 class="text-sm font-bold text-indigo-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-clipboard-list mr-2"></i>行政繳交追蹤</h4>`;
-    submissions.forEach(rec => {
-        let sColor = 'bg-red-100 text-red-700'; // 預設缺交
-        let sText = '缺交';
-        
-        if (rec.status === 'done') {
-            sColor = 'bg-green-100 text-green-700';
-            sText = rec.itemName.includes('打掃') ? '已完成' : '已交';
-        } else if (rec.status === 'pending') {
-            sColor = 'bg-yellow-100 text-yellow-700';
-            sText = rec.itemName.includes('打掃') ? '待加強' : '未交';
-        } else if (rec.status === 'none') {
-            sColor = 'bg-gray-100 text-gray-600';
-            sText = '未攜帶';
-        } else if (rec.status === 'missing') {
-            sColor = 'bg-red-100 text-red-700';
-            sText = rec.itemName.includes('打掃') ? '未打掃' : '缺交';
-        }
 
-        // 🟢 動態標籤：如果這筆欠交紀錄「不是今天」發生的，加上日期警告標籤
-        let dateBadge = (rec.date && rec.date !== targetDate) ? `<span class="ml-2 text-[10px] font-normal text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">⚠️ 自 ${rec.date} 欠交</span>` : '';
+                    if (submissions.length > 0) {
+                        let html = `<h4 class="text-sm font-bold text-indigo-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-clipboard-list mr-2"></i>行政繳交追蹤</h4>`;
+                        submissions.forEach(rec => {
+                            let sColor = 'bg-red-100 text-red-700'; 
+                            let sText = '缺交';
+                            
+                            if (rec.status === 'done') {
+                                sColor = 'bg-green-100 text-green-700';
+                                sText = rec.itemName.includes('打掃') ? '已完成' : '已交';
+                            } else if (rec.status === 'pending') {
+                                sColor = 'bg-yellow-100 text-yellow-700';
+                                sText = rec.itemName.includes('打掃') ? '待加強' : '未交';
+                            } else if (rec.status === 'none') {
+                                sColor = 'bg-gray-100 text-gray-600';
+                                sText = '未攜帶';
+                            } else if (rec.status === 'missing') {
+                                sColor = 'bg-red-100 text-red-700';
+                                sText = rec.itemName.includes('打掃') ? '未打掃' : '缺交';
+                            }
 
-        html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center border-l-4 border-indigo-400">
-                    <h4 class="font-bold text-gray-800">${rec.itemName}${dateBadge}</h4>
-                    <span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span>
-                 </div>`;
-    }); 
-    document.getElementById('submission-section').innerHTML = html;
-}
+                            let dateBadge = (rec.date && rec.date !== targetDate) ? `<span class="ml-2 text-[10px] font-normal text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">⚠️ 自 ${rec.date} 欠交</span>` : '';
+
+                            html += `<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-3 flex justify-between items-center border-l-4 border-indigo-400">
+                                        <h4 class="font-bold text-gray-800">${rec.itemName}${dateBadge}</h4>
+                                        <span class="${sColor} text-xs font-bold px-2 py-1 rounded-full">${sText}</span>
+                                     </div>`;
+                        }); 
+                        document.getElementById('submission-section').innerHTML = html;
+                    }
+
                     if (attendance.length > 0) {
                         let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-user-check mr-2"></i>上課狀況與評語</h4>`;
                         attendance.forEach(rec => {
@@ -293,6 +313,7 @@ if (submissions.length > 0) {
                         }); 
                         document.getElementById('attendance-section').innerHTML = html;
                     }
+
                     if (scores.length > 0) {
                         let html = `<h4 class="text-sm font-bold text-gray-500 mb-2 border-b pb-1 mt-4"><i class="fas fa-marker mr-2"></i>測驗成績</h4>`;
                         scores.forEach(rec => { 
@@ -318,6 +339,3 @@ if (submissions.length > 0) {
     </script>
 </body>
 </html>
-
-
-
