@@ -99,12 +99,37 @@
 
         <section id="section-discipline" class="hidden">
             <div class="bg-white rounded-xl shadow-sm border border-red-100 p-5">
-                <div class="flex justify-between items-center mb-4 border-b border-red-100 pb-2">
-                    <h3 class="font-bold text-red-600"><i class="fas fa-user-clock mr-2"></i>日常出缺席點名</h3>
-                    <button id="btn-discipline-load" onclick="loadDiscipline()" class="bg-red-50 text-red-600 font-bold py-1.5 px-3 rounded-lg border border-red-200 hover:bg-red-100 text-sm"><i class="fas fa-sync-alt mr-1"></i> 載入名單</button>
+                
+                <div id="discipline-schedule-area">
+                    <div class="flex justify-between items-center mb-3 border-b border-red-100 pb-2">
+                        <h3 class="font-bold text-red-600"><i class="fas fa-list-alt mr-2"></i>選擇點名節次</h3>
+                        <button onclick="fetchSchedule()" class="text-red-500 text-sm hover:text-red-700 font-bold"><i class="fas fa-sync-alt"></i> 重新整理</button>
+                    </div>
+                    
+                    <div id="schedule-list" class="flex flex-col gap-2 mb-4">
+                        <p class="text-center text-gray-400 text-sm py-4">讀取課表中...</p>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex gap-2">
+                        <input type="text" id="manual-period" placeholder="自訂(如:第9節)" class="flex-1 bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-sm outline-none">
+                        <input type="text" id="manual-subject" placeholder="科目名稱" class="flex-1 bg-gray-50 border border-gray-300 rounded px-2 py-1.5 text-sm outline-none">
+                        <button onclick="startManualAttendance()" class="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg border border-red-200 shadow-sm text-sm font-bold hover:bg-red-100">建立</button>
+                    </div>
                 </div>
-                <div id="discipline-list" class="mb-4 max-h-[60vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div>
-                <button id="btn-discipline-save" onclick="saveDiscipline()" class="hidden w-full bg-red-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-red-700 transition"><i class="fas fa-save mr-2"></i> 儲存出缺席紀錄</button>
+
+                <div id="discipline-attendance-area" class="hidden">
+                    <div class="flex justify-between items-center mb-4 border-b border-red-100 pb-2">
+                        <h3 class="font-bold text-red-600"><i class="fas fa-user-clock mr-2"></i><span id="current-attendance-title">出缺席點名</span></h3>
+                        <button onclick="closeAttendanceArea()" class="bg-gray-100 text-gray-600 font-bold py-1 px-3 rounded-lg border border-gray-200 hover:bg-gray-200 text-sm shadow-sm">
+                            <i class="fas fa-arrow-left mr-1"></i> 返回課表
+                        </button>
+                    </div>
+                    <div id="discipline-list" class="mb-4 max-h-[60vh] overflow-y-auto"></div>
+                    <button id="btn-discipline-save" onclick="saveDiscipline()" class="hidden w-full bg-red-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-red-700 transition flex justify-center items-center">
+                        <i class="fas fa-save mr-2"></i> 儲存出缺席紀錄
+                    </button>
+                </div>
+
             </div>
         </section>
 
@@ -137,8 +162,24 @@
             if (cadreTitle.includes('學藝')) { document.getElementById('tab-academic').classList.remove('hidden'); defaultTab = 'academic'; }
             if (cadreTitle.includes('衛生')) { document.getElementById('tab-hygiene').classList.remove('hidden'); defaultTab = 'hygiene'; }
             if (cadreTitle.includes('資訊')) { document.getElementById('tab-it').classList.remove('hidden'); defaultTab = 'it'; }
-            if (cadreTitle.includes('風紀')) { document.getElementById('tab-discipline').classList.remove('hidden'); defaultTab = 'discipline'; }
+            if (cadreTitle.includes('風紀')) { 
+                document.getElementById('tab-discipline').classList.remove('hidden'); 
+                defaultTab = 'discipline'; 
+                fetchSchedule(); // 風紀股長一進來就自動抓課表
+            }
             switchTab(defaultTab);
+
+            // 監聽日期改變：自動更新課表與清空舊資料
+            dateInput.addEventListener('change', () => {
+                if (cadreTitle.includes('風紀')) {
+                    closeAttendanceArea(); 
+                    fetchSchedule();
+                }
+                ['common', 'hygiene', 'it'].forEach(mode => {
+                    document.getElementById(`${mode}-list`).innerHTML = '<p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p>';
+                    document.getElementById(`btn-${mode}-save`).classList.add('hidden');
+                });
+            });
         });
 
         function switchTab(target) {
@@ -160,39 +201,98 @@
         function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
 
         // ==========================================
-        // 模組一：學藝 (聯絡簿)
-        // ==========================================
-        async function submitAcademic() {
-            const content = document.getElementById('academic-content').value.trim();
-            if (!content) return alert('請先輸入聯絡簿內容！');
-            const date = document.getElementById('work-date').value;
-            const btn = document.getElementById('btn-academic-submit');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 發布中...'; btn.disabled = true;
-
-            try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: date, className: stuClass, content: content, teacherName: `${cadreTitle} ${stuName}` }) });
-                const result = await response.json();
-                if (result.success) { alert('聯絡簿發布成功！'); document.getElementById('academic-content').value = ''; } 
-                else alert('發布失敗：' + result.message);
-            } catch (error) { alert('連線異常。'); } 
-            finally { btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> 發布至班級看板'; btn.disabled = false; }
-        }
-
-        // ==========================================
-        // 模組二：風紀 (點名)
+        // 🟢 模組：風紀股長 (課表與點名)
         // ==========================================
         let attendanceData = [];
-        async function loadDiscipline() {
-            const date = document.getElementById('work-date').value, btn = document.getElementById('btn-discipline-load'), listDiv = document.getElementById('discipline-list');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
-            listDiv.innerHTML = '<p class="text-center text-blue-500 py-4"><i class="fas fa-circle-notch fa-spin mr-2"></i>載入中...</p>';
+        let currentPeriod = '';
+        let currentSubject = '';
+
+        // 1. 抓取當日課表
+        async function fetchSchedule() {
+            const date = document.getElementById('work-date').value;
+            const container = document.getElementById('schedule-list');
+            container.innerHTML = '<p class="text-sm text-gray-500 text-center"><i class="fas fa-spinner fa-spin mr-1"></i> 讀取課表中...</p>';
+            
             try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAttendance', date: date, className: stuClass, subject: '日常出缺席' }) });
+                const res = await fetch(API_URL, {
+                    method: 'POST', body: JSON.stringify({ action: 'getSchedule', date: date, className: stuClass })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    if (result.isWeekend) {
+                        container.innerHTML = '<p class="text-sm text-gray-500 text-center py-2">今天是假日，無預設課表。<br>若遇返校打掃或輔導課，請使用下方「自訂節次」。</p>';
+                    } else if (result.schedule.length === 0) {
+                        container.innerHTML = `<p class="text-sm text-red-500 text-center">查無 ${stuClass} 班今日課表，請確認資料庫 ClassSchedule 設定。</p>`;
+                    } else {
+                        let html = '';
+                        result.schedule.forEach((item, index) => {
+                            html += `
+                            <div class="flex items-center justify-between bg-red-50 p-2.5 rounded-lg border border-red-100 shadow-sm">
+                                <div class="font-bold text-red-700 w-16 text-sm text-center">${item.period}</div>
+                                <div class="flex-1 px-2">
+                                    <input type="text" id="subj-${index}" value="${item.subject}" class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded outline-none focus:ring-2 focus:ring-red-400" title="可直接修改以應對調課">
+                                </div>
+                                <button onclick="startAttendance('${item.period}', '${index}')" class="bg-red-500 text-white px-4 py-1.5 rounded-lg shadow-sm text-sm font-bold hover:bg-red-600 transition">
+                                    <i class="fas fa-check-square"></i> 點名
+                                </button>
+                            </div>`;
+                        });
+                        container.innerHTML = html;
+                    }
+                } else {
+                    container.innerHTML = `<p class="text-sm text-red-500 text-center">讀取失敗：${result.message}</p>`;
+                }
+            } catch (e) { container.innerHTML = '<p class="text-sm text-red-500 text-center">網路連線異常</p>'; }
+        }
+
+        // 2. 啟動特定節次的點名
+        function startManualAttendance() {
+            const period = document.getElementById('manual-period').value.trim();
+            const subject = document.getElementById('manual-subject').value.trim();
+            if(!period || !subject) return alert('請輸入自訂的節次與科目！');
+            startAttendance(period, subject, true); 
+        }
+
+        async function startAttendance(period, subjectOrIndex, isManual = false) {
+            let subjectInput = isManual ? subjectOrIndex : (document.getElementById(`subj-${subjectOrIndex}`).value.trim() || '未定科目');
+            
+            currentPeriod = period;
+            currentSubject = subjectInput;
+            const fullSubjectName = `${period} - ${currentSubject}`; // 寫入資料庫的格式
+
+            // 切換畫面
+            document.getElementById('current-attendance-title').innerText = fullSubjectName;
+            document.getElementById('discipline-schedule-area').classList.add('hidden');
+            document.getElementById('discipline-attendance-area').classList.remove('hidden');
+
+            await loadDiscipline(fullSubjectName);
+        }
+
+        function closeAttendanceArea() {
+            document.getElementById('discipline-attendance-area').classList.add('hidden');
+            document.getElementById('discipline-schedule-area').classList.remove('hidden');
+        }
+
+        // 3. 載入名單
+        async function loadDiscipline(fullSubjectName) {
+            const date = document.getElementById('work-date').value;
+            const listDiv = document.getElementById('discipline-list');
+            listDiv.innerHTML = '<p class="text-center text-blue-500 py-4"><i class="fas fa-circle-notch fa-spin mr-2"></i>載入中...</p>';
+            document.getElementById('btn-discipline-save').classList.add('hidden');
+
+            try {
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'loadAttendance', date: date, className: stuClass, subject: fullSubjectName }) 
+                });
                 const result = await response.json();
-                if (result.success) { attendanceData = result.data; renderDisciplineList(); document.getElementById('btn-discipline-save').classList.remove('hidden'); } 
-                else listDiv.innerHTML = `<p class="text-center text-red-500 font-bold py-4">載入失敗：${result.message}</p>`;
-            } catch (error) { listDiv.innerHTML = '<p class="text-center text-red-500 py-4">網路連線異常</p>'; } 
-            finally { btn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i> 載入名單'; btn.disabled = false; }
+                if (result.success) { 
+                    attendanceData = result.data; 
+                    renderDisciplineList(); 
+                    document.getElementById('btn-discipline-save').classList.remove('hidden'); 
+                } else { listDiv.innerHTML = `<p class="text-center text-red-500 font-bold py-4">載入失敗：${result.message}</p>`; }
+            } catch (error) { listDiv.innerHTML = '<p class="text-center text-red-500 py-4">網路連線異常</p>'; }
         }
 
         function renderDisciplineList() {
@@ -202,35 +302,62 @@
                 let bg = s === 'present' ? 'bg-green-50' : (s === 'leave' ? 'bg-blue-50' : 'bg-red-50');
                 html += `
                 <div class="flex items-center justify-between p-3 mb-2 rounded-lg border border-gray-200 ${bg}">
-                    <div class="font-bold text-gray-700"><span class="text-gray-400 mr-2 text-sm">${st.studentId}</span>${st.name}</div>
+                    <div class="font-bold text-gray-700">
+                        <span class="text-gray-400 mr-2 text-sm">${st.studentId}</span>${st.name}
+                        ${s === 'leave' ? '<span class="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">家長已請假</span>' : ''}
+                    </div>
                     <div class="flex gap-1">
-                        <button onclick="setAttendance(${idx}, 'present')" class="px-2 py-1 text-xs font-bold rounded ${s === 'present' ? 'bg-green-500 text-white' : 'bg-white text-gray-500 border'}">出席</button>
-                        <button onclick="setAttendance(${idx}, 'late')" class="px-2 py-1 text-xs font-bold rounded ${s === 'late' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-500 border'}">遲到</button>
-                        <button onclick="setAttendance(${idx}, 'absent')" class="px-2 py-1 text-xs font-bold rounded ${s === 'absent' ? 'bg-red-500 text-white' : 'bg-white text-gray-500 border'}">缺席</button>
+                        <button onclick="setAttendance(${idx}, 'present')" class="px-3 py-1 text-sm font-bold rounded ${s === 'present' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">出席</button>
+                        <button onclick="setAttendance(${idx}, 'late')" class="px-3 py-1 text-sm font-bold rounded ${s === 'late' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">遲到</button>
+                        <button onclick="setAttendance(${idx}, 'absent')" class="px-3 py-1 text-sm font-bold rounded ${s === 'absent' ? 'bg-red-500 text-white shadow' : 'bg-white text-gray-500 border'}">缺席</button>
                     </div>
                 </div>`;
             });
             document.getElementById('discipline-list').innerHTML = html;
         }
 
-        function setAttendance(idx, s) { attendanceData[idx].attendance = s; renderDisciplineList(); }
+        function setAttendance(idx, s) { 
+            if (attendanceData[idx].attendance === 'leave' && !confirm('該生家長已請假，確定要覆蓋嗎？')) return;
+            attendanceData[idx].attendance = s; 
+            renderDisciplineList(); 
+        }
+
+        // 4. 儲存點名紀錄
         async function saveDiscipline() {
-            const date = document.getElementById('work-date').value, btn = document.getElementById('btn-discipline-save');
+            const date = document.getElementById('work-date').value;
+            const fullSubjectName = `${currentPeriod} - ${currentSubject}`;
+            const btn = document.getElementById('btn-discipline-save');
+            
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 儲存中...'; btn.disabled = true;
-            const recordsToSave = attendanceData.map(st => ({ date: date, className: stuClass, subject: '日常出缺席', studentId: st.studentId, name: st.name, attendance: st.attendance, comment: '' }));
+            const recordsToSave = attendanceData.map(st => ({ 
+                date: date, className: stuClass, subject: fullSubjectName, studentId: st.studentId, name: st.name, attendance: st.attendance, comment: '' 
+            }));
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'batchSaveAttendance', records: recordsToSave }) });
                 const result = await response.json();
-                if (result.success) alert('出缺席紀錄已成功儲存！'); else alert('儲存失敗：' + result.message);
+                if (result.success) {
+                    alert(`${fullSubjectName} 點名紀錄已儲存！`);
+                    closeAttendanceArea(); // 存檔後自動退回課表頁
+                } else alert('儲存失敗：' + result.message);
             } catch (error) { alert('連線異常。'); } finally { btn.innerHTML = '<i class="fas fa-save mr-2"></i> 儲存出缺席紀錄'; btn.disabled = false; }
         }
 
- // ==========================================
-        // 🟢 模組三：物品、手機、打掃 (通用型 Submissions)
         // ==========================================
-        // 儲存三個模組各自的陣列資料與物品名稱
-        let subData = { common: { data: [], itemName: '' }, hygiene: { data: [], itemName: '打掃工作' }, it: { data: [], itemName: '手機繳交' } };
+        // 學藝、衛生、資訊、共同功能 (維持原樣)
+        // ==========================================
+        async function submitAcademic() {
+            const content = document.getElementById('academic-content').value.trim();
+            if (!content) return alert('請輸入聯絡簿內容！');
+            const date = document.getElementById('work-date').value, btn = document.getElementById('btn-academic-submit');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 發布中...'; btn.disabled = true;
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: date, className: stuClass, content: content, teacherName: `${cadreTitle} ${stuName}` }) });
+                const result = await response.json();
+                if (result.success) { alert('聯絡簿發布成功！'); document.getElementById('academic-content').value = ''; } else alert('發布失敗：' + result.message);
+            } catch (error) { alert('連線異常。'); } finally { btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> 發布至班級看板'; btn.disabled = false; }
+        }
 
+        let subData = { common: { data: [], itemName: '' }, hygiene: { data: [], itemName: '打掃工作' }, it: { data: [], itemName: '手機繳交' } };
         async function loadSubData(mode) {
             let itemName = subData[mode].itemName;
             if (mode === 'common') {
@@ -238,54 +365,36 @@
                 if (!itemName) return alert('請輸入要登記的物品名稱！');
                 subData.common.itemName = itemName;
             }
-
-            const date = document.getElementById('work-date').value;
-            const btn = document.getElementById(`btn-${mode}-load`);
-            const listDiv = document.getElementById(`${mode}-list`);
-            
+            const date = document.getElementById('work-date').value, btn = document.getElementById(`btn-${mode}-load`), listDiv = document.getElementById(`${mode}-list`);
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
             listDiv.innerHTML = '<p class="text-center text-blue-500 py-4"><i class="fas fa-circle-notch fa-spin mr-2"></i>載入中...</p>';
-
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadSubmissions', date: date, className: stuClass, itemName: itemName }) });
                 const result = await response.json();
-                if (result.success) {
-                    subData[mode].data = result.data;
-                    renderSubList(mode);
-                    document.getElementById(`btn-${mode}-save`).classList.remove('hidden');
-                } else listDiv.innerHTML = `<p class="text-center text-red-500 py-4">載入失敗：${result.message}</p>`;
-            } catch (error) { listDiv.innerHTML = '<p class="text-center text-red-500 py-4">網路連線異常</p>'; } 
-            finally { btn.innerHTML = '載入名單'; btn.disabled = false; }
+                if (result.success) { subData[mode].data = result.data; renderSubList(mode); document.getElementById(`btn-${mode}-save`).classList.remove('hidden'); } 
+                else listDiv.innerHTML = `<p class="text-center text-red-500 py-4">載入失敗：${result.message}</p>`;
+            } catch (error) { listDiv.innerHTML = '<p class="text-center text-red-500 py-4">網路連線異常</p>'; } finally { btn.innerHTML = '載入名單'; btn.disabled = false; }
         }
 
-        // 🟢 這是被您不小心刪掉/覆蓋的正確函式 (已包含「未攜帶」功能)
         function renderSubList(mode) {
             let html = '';
             subData[mode].data.forEach((st, idx) => {
-                let s = st.status || 'pending'; // 預設未交/待加強
-                
-                // 決定背景顏色 (新增 none: 未攜帶 的灰色背景)
-                let bg = 'bg-yellow-50'; // 預設 pending
-                if (s === 'done') bg = 'bg-green-50';
-                else if (s === 'missing') bg = 'bg-red-50';
-                else if (s === 'none') bg = 'bg-gray-100'; 
+                let s = st.status || 'pending';
+                let bg = 'bg-yellow-50';
+                if (s === 'done') bg = 'bg-green-50'; else if (s === 'missing') bg = 'bg-red-50'; else if (s === 'none') bg = 'bg-gray-100';
                 
                 html += `<div class="flex items-center justify-between p-3 mb-2 rounded-lg border border-gray-200 ${bg}">
                             <div class="font-bold text-gray-700"><span class="text-gray-400 mr-2 text-sm">${st.studentId}</span>${st.name}</div>
                             <div class="flex gap-1">`;
-                
-                // 依據不同模組顯示不同的按鈕
                 if (mode === 'hygiene') {
                     html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">乾淨</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">待加強</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'missing')" class="px-2 py-1 text-xs font-bold rounded ${s === 'missing' ? 'bg-red-500 text-white shadow' : 'bg-white text-gray-500 border'}">未打掃</button>`;
                 } else if (mode === 'it') {
-                    // 資訊股長專屬：加入「未攜帶 (none)」選項
                     html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'none')" class="px-2 py-1 text-xs font-bold rounded ${s === 'none' ? 'bg-gray-500 text-white shadow' : 'bg-white text-gray-500 border'}">未攜帶</button>`;
                 } else {
-                    // 共同物品繳交
                     html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>`;
                 }
@@ -297,25 +406,15 @@
         function setSubStatus(mode, idx, s) { subData[mode].data[idx].status = s; renderSubList(mode); }
 
         async function saveSubData(mode) {
-            const date = document.getElementById('work-date').value;
-            const itemName = subData[mode].itemName;
-            const btn = document.getElementById(`btn-${mode}-save`);
+            const date = document.getElementById('work-date').value, itemName = subData[mode].itemName, btn = document.getElementById(`btn-${mode}-save`);
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 儲存中...'; btn.disabled = true;
-
-            const recordsToSave = subData[mode].data.map(st => ({
-                date: date, className: stuClass, itemName: itemName, studentId: st.studentId, name: st.name, status: st.status
-            }));
-
+            const recordsToSave = subData[mode].data.map(st => ({ date: date, className: stuClass, itemName: itemName, studentId: st.studentId, name: st.name, status: st.status }));
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'batchSaveSubmissions', records: recordsToSave }) });
                 const result = await response.json();
                 if (result.success) alert(`${itemName} 紀錄已成功儲存！`); else alert('儲存失敗：' + result.message);
-            } catch (error) { alert('連線異常，儲存失敗。'); } 
-            finally { btn.innerHTML = '<i class="fas fa-save mr-2"></i> 儲存紀錄'; btn.disabled = false; }
+            } catch (error) { alert('連線異常。'); } finally { btn.innerHTML = '<i class="fas fa-save mr-2"></i> 儲存紀錄'; btn.disabled = false; }
         }
     </script>
 </body>
 </html>
-
-
-
