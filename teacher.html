@@ -46,7 +46,14 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">日期</label><input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></div>
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">班級</label><select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></select></div>
-                    <div id="subjectContainer"><label class="block text-sm font-medium text-gray-700 mb-1">科目</label><select id="subjectSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></select></div>
+                    
+                    <div id="subjectContainer">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">節次 / 科目</label>
+                        <select id="subjectSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
+                            <option value="">載入中...</option>
+                        </select>
+                    </div>
+                    
                     <div id="examNameContainer" class="hidden">
                         <label class="block text-sm font-bold text-blue-600 mb-1">考試名稱 (可輸入或點選)</label>
                         <input type="text" id="examNameInput" list="examNameList" placeholder="例: 第一單元" class="w-full border-blue-300 border-2 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
@@ -86,31 +93,96 @@
     </main>
 
     <script>
+        // 🚨 您的 GAS 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
         if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'teacher') { alert('權限不足！'); window.location.href = 'login.html'; }
 
         let currentMode = 'attendance', studentData = [];
         const datePicker = document.getElementById('datePicker'), classSelect = document.getElementById('classSelect'), subjectSelect = document.getElementById('subjectSelect'), examNameInput = document.getElementById('examNameInput');
 
-        datePicker.valueAsDate = new Date();
-        document.getElementById('teacher-name-display').innerText = sessionStorage.getItem('username') + " 老師";
+        // 🟢 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            datePicker.valueAsDate = new Date();
+            document.getElementById('teacher-name-display').innerText = sessionStorage.getItem('username') + " 老師";
 
-        JSON.parse(sessionStorage.getItem('teacherClasses') || "[]").forEach(c => classSelect.add(new Option(c, c)));
-        JSON.parse(sessionStorage.getItem('teacherSubjects') || "[]").forEach(s => subjectSelect.add(new Option(s, s)));
+            const classes = JSON.parse(sessionStorage.getItem('teacherClasses') || "[]");
+            classes.forEach(c => classSelect.add(new Option(c, c)));
 
-        // 🟢 防呆與自動載入機制
-        [datePicker, classSelect, subjectSelect, examNameInput].forEach(input => {
-            input.addEventListener('change', () => {
-                studentData = [];
-                document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入資料」</td></tr>';
-                document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden');
-                document.getElementById('stats-dashboard').innerText = "等待載入...";
-                
+            // 首次載入課表
+            fetchSubjectSchedule();
+        });
+
+        // 🟢 動態載入課表 API
+        async function fetchSubjectSchedule() {
+            const date = datePicker.value;
+            const className = classSelect.value;
+            if (!date || !className) return;
+
+            subjectSelect.innerHTML = '<option value="">載入課表中...</option>';
+            subjectSelect.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getSchedule', date: date, className: className })
+                });
+                const result = await response.json();
+
+                subjectSelect.innerHTML = ''; // 清空選項
+
+                // 1. 加入當日課表 (與風紀股長連動)
+                if (result.success && !result.isWeekend && result.schedule.length > 0) {
+                    const optGroup1 = document.createElement('optgroup');
+                    optGroup1.label = "📋 當日課表 (連動風紀點名)";
+                    result.schedule.forEach(item => {
+                        const val = `${item.period} - ${item.subject}`;
+                        optGroup1.appendChild(new Option(val, val));
+                    });
+                    subjectSelect.appendChild(optGroup1);
+                } else {
+                    subjectSelect.add(new Option("今日無預設課表", ""));
+                }
+
+                // 2. 加入老師的專屬科目 (備用)
+                const teacherSubjs = JSON.parse(sessionStorage.getItem('teacherSubjects') || "[]");
+                if (teacherSubjs.length > 0) {
+                    const optGroup2 = document.createElement('optgroup');
+                    optGroup2.label = "💡 我的任教科目 (無節次)";
+                    teacherSubjs.forEach(s => optGroup2.appendChild(new Option(s, s)));
+                    subjectSelect.appendChild(optGroup2);
+                }
+
+            } catch (e) {
+                subjectSelect.innerHTML = '<option value="">課表載入失敗</option>';
+            } finally {
+                subjectSelect.disabled = false;
                 if (currentMode === 'score') fetchExistingExams();
-                // 🟢 條件改變時，如果是聯絡簿模式，自動幫老師撈取該日期的舊內容
+            }
+        }
+
+        // 🟢 監聽器切分：只有換日期或換班級時，才需要重新抓課表
+        [datePicker, classSelect].forEach(input => {
+            input.addEventListener('change', () => {
+                resetTableState();
+                fetchSubjectSchedule(); // 重新抓取課表
                 if (currentMode === 'announcement') loadBulletin();
             });
         });
+
+        [subjectSelect, examNameInput].forEach(input => {
+            input.addEventListener('change', () => {
+                resetTableState();
+                if (currentMode === 'score' && input === subjectSelect) fetchExistingExams();
+            });
+        });
+
+        function resetTableState() {
+            studentData = [];
+            document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入資料」</td></tr>';
+            document.getElementById('batch-save-btn').classList.add('hidden'); 
+            document.getElementById('quick-fill-btn').classList.add('hidden');
+            document.getElementById('stats-dashboard').innerText = "等待載入...";
+        }
 
         window.addEventListener('beforeunload', function (e) {
             if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '尚有未儲存資料，確定離開？'; }
@@ -130,9 +202,8 @@
         }
 
         function switchMode(mode) {
-            currentMode = mode; studentData = []; 
+            currentMode = mode; resetTableState();
             document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">請重新載入資料</td></tr>';
-            document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden'); document.getElementById('stats-dashboard').innerText = "等待載入...";
 
             const tabAtt = document.getElementById('tab-attendance'), tabScore = document.getElementById('tab-score'), tabAnn = document.getElementById('tab-announcement');
             const examContainer = document.getElementById('examNameContainer'), subjContainer = document.getElementById('subjectContainer'), tableContainer = document.getElementById('table-container'), bulletinContainer = document.getElementById('bulletin-container');
@@ -151,7 +222,6 @@
                 tabAnn.className = "flex-1 py-2 text-center rounded-md bg-white shadow text-blue-600 font-bold transition-all";
                 examContainer.classList.add('hidden'); subjContainer.classList.add('hidden');
                 tableContainer.classList.add('hidden'); bulletinContainer.classList.remove('hidden');
-                // 🟢 切換到聯絡簿頁籤時，自動載入已儲存的內容！
                 loadBulletin();
             }
             renderTableHeader();
@@ -168,15 +238,12 @@
 
         function executeLoad() { if (currentMode === 'announcement') loadBulletin(); else loadStudentList(); }
 
-        // 🟢 載入聯絡簿內容的函式
         async function loadBulletin() {
             const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true;
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) });
                 const result = await response.json();
-                if(result.success) {
-                    document.getElementById('bulletin-content').value = result.content || "";
-                }
+                if(result.success) document.getElementById('bulletin-content').value = result.content || "";
             } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; }
         }
 
@@ -187,13 +254,15 @@
             try {
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: datePicker.value, className: classSelect.value, content: content, teacherName: sessionStorage.getItem('username') }) });
                 const result = await res.json();
-                if(result.success) alert('🎉 公告已發布或更新！家長端與學生端可即時查看。'); else alert('失敗：'+result.message);
+                if(result.success) alert('🎉 公告已發布或更新！'); else alert('失敗：'+result.message);
             } catch(e) { alert('連線異常'); } finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; }
         }
 
         async function loadStudentList() {
             const date = datePicker.value, className = classSelect.value, subject = subjectSelect.value, examName = examNameInput.value;
             if (currentMode === 'score' && !examName.trim()) return alert("請填寫「考試名稱」！");
+            if (!subject) return alert("請選擇科目！");
+
             const loadBtn = document.getElementById('load-btn'); loadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; loadBtn.disabled = true;
 
             try {
