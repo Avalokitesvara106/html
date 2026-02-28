@@ -3,113 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>學生數位聯絡簿</title>
+    <title>班級聯絡簿 - 學生專區</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-100 font-sans pb-10">
 
-    <header class="bg-teal-600 text-white shadow-md rounded-b-3xl pb-6">
+    <header class="bg-gradient-to-r from-teal-500 to-green-600 text-white shadow-md rounded-b-3xl pb-6">
         <div class="p-4 flex justify-between items-center">
-            <h1 class="text-lg font-bold">學生專區</h1>
-            <button onclick="logout()" class="text-teal-100 hover:text-white text-sm">
-                <i class="fas fa-sign-out-alt"></i> 登出
-            </button>
+            <h1 class="text-lg font-bold"><i class="fas fa-chalkboard mr-2"></i>線上公佈欄</h1>
+            <button onclick="logout()" class="text-teal-100 hover:text-white text-sm"><i class="fas fa-sign-out-alt"></i> 登出</button>
         </div>
         <div class="px-6 flex items-center mt-2">
-            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-teal-600 text-2xl font-bold border-4 border-teal-300 shadow-sm">
-                <i class="fas fa-book-reader"></i>
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-teal-600 text-3xl font-bold border-4 border-teal-200 shadow-sm">
+                <i class="fas fa-users"></i>
             </div>
-            <div class="ml-4">
-                <p class="text-teal-100 text-sm" id="display-student-class">班級載入中</p>
-                <h2 class="text-2xl font-bold" id="display-student-name">姓名載入中...</h2>
+            <div class="ml-4 flex-1">
+                <p class="text-teal-100 text-sm mb-1">歡迎登入</p>
+                <h2 class="text-2xl font-bold" id="display-class-name">載入中...</h2>
             </div>
         </div>
     </header>
 
     <main class="max-w-md mx-auto mt-6 px-4">
         
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-gray-700">選擇查詢日期</h3>
-            <input type="date" id="daily-date" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg p-2 focus:ring-2 focus:ring-teal-500">
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex justify-between items-center border border-gray-100">
+            <h3 class="font-bold text-gray-700"><i class="far fa-calendar-alt text-teal-500 mr-2"></i>選擇日期</h3>
+            <input type="date" id="work-date" class="bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2 focus:ring-2 focus:ring-teal-500 outline-none font-bold">
         </div>
 
         <div id="loading-msg" class="text-center text-teal-500 py-8 hidden">
-            <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i><p class="mt-2">聯絡簿載入中...</p>
+            <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i><p class="mt-2 font-bold">讀取聯絡簿中...</p>
         </div>
 
-        <div id="announcement-section">
-            </div>
+        <div id="announcement-section"></div>
 
     </main>
 
     <script>
-        // 🚨 替換 API 網址
+        // 🚨 您的 GAS 網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
         
-        const studentId = sessionStorage.getItem('studentId');
-        const stuName = sessionStorage.getItem('studentName');
+        const isLoggedIn = sessionStorage.getItem('isLoggedIn');
+        const userRole = sessionStorage.getItem('userRole');
         const stuClass = sessionStorage.getItem('studentClass');
+        const stuName = sessionStorage.getItem('studentName'); // 學生端的 Name 其實是班級名稱 (如 807班)
 
-        if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'student') { 
-            alert('請先以學生身分登入！'); window.location.href = 'login.html'; 
+        if (!isLoggedIn || userRole !== 'student') { 
+            alert('請先以學生(班級)身分登入！'); 
+            window.location.href = 'login.html'; 
         }
 
-        document.getElementById('display-student-name').innerText = stuName || "同學您好";
-        document.getElementById('display-student-class').innerText = stuClass || "未定班級";
-
         document.addEventListener('DOMContentLoaded', () => {
-            const dateInput = document.getElementById('daily-date');
-            dateInput.valueAsDate = new Date();
-            dateInput.addEventListener('change', (e) => { fetchAnnouncement(e.target.value); });
-            fetchAnnouncement(dateInput.value); 
+            document.getElementById('display-class-name').innerText = stuName || `${stuClass}班`;
+            
+            const dateInput = document.getElementById('work-date');
+            const today = new Date(); 
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            
+            // 監聽日期改變
+            dateInput.addEventListener('change', () => { loadAnnouncement(); });
+            
+            // 初始載入
+            loadAnnouncement();
         });
 
-        async function fetchAnnouncement(targetDate) {
-            if (!stuClass) {
-                document.getElementById('announcement-section').innerHTML = `<div class="bg-red-50 rounded-xl p-6 text-center text-red-500">系統找不到您的班級資料，無法載入聯絡簿。</div>`;
-                return;
-            }
-
-            document.getElementById('loading-msg').classList.remove('hidden');
-            document.getElementById('announcement-section').innerHTML = '';
+        async function loadAnnouncement() {
+            const date = document.getElementById('work-date').value;
+            const loadingMsg = document.getElementById('loading-msg');
+            const section = document.getElementById('announcement-section');
+            
+            section.innerHTML = '';
+            loadingMsg.classList.remove('hidden');
 
             try {
                 const response = await fetch(API_URL, { 
                     method: 'POST', 
-                    body: JSON.stringify({ action: 'loadAnnouncement', date: targetDate, className: stuClass }) 
+                    body: JSON.stringify({ action: 'loadAnnouncement', date: date, className: stuClass }) 
                 });
                 const result = await response.json();
-                document.getElementById('loading-msg').classList.add('hidden');
+                
+                if(result.success) {
+                    if (!result.content && !result.fileUrl) {
+                        section.innerHTML = `
+                            <div class="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500 mt-4 shadow-inner">
+                                <i class="fas fa-box-open text-4xl mb-3 text-gray-300"></i>
+                                <p class="font-bold">本日尚無發布聯絡簿</p>
+                            </div>`;
+                        return;
+                    }
 
-                if (result.success && result.content) {
-                    document.getElementById('announcement-section').innerHTML = `
-                        <div class="bg-white rounded-2xl shadow-md border-t-4 border-teal-500 overflow-hidden">
-                            <div class="p-6">
-                                <h4 class="text-lg font-bold text-teal-800 mb-4 flex items-center border-b pb-2">
-                                    <i class="fas fa-bullhorn mr-2"></i> ${targetDate} 班級聯絡簿
-                                </h4>
-                                <p class="text-gray-800 whitespace-pre-wrap text-base leading-relaxed">${result.content}</p>
-                            </div>
-                            <div class="bg-teal-50 px-6 py-3 text-right">
-                                <p class="text-xs text-teal-600 font-bold">發布者：${result.teacher}</p>
-                            </div>
+                    // 處理文字內容
+                    let contentHtml = result.content 
+                        ? `<p class="text-gray-800 whitespace-pre-wrap text-[15px] leading-relaxed mb-4">${result.content}</p>` 
+                        : '';
+
+                    // 🟢 處理圖片與附件 (套用最新的縮圖 API)
+                    let attachmentHtml = '';
+                    if (result.fileUrl) {
+                        // 🪄 魔法轉換：使用正則表達式抓取 ID，並改用 thumbnail 官方縮圖 API
+                        let fileIdMatch = result.fileUrl.match(/[-\w]{25,}/);
+                        let fileId = fileIdMatch ? fileIdMatch[0] : '';
+                        
+                        // 建立圖片標籤 (加上 onerror 防呆)
+                        let imgTag = fileId ? `<div class="mt-3 text-center"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-w-full rounded-lg shadow-md border border-teal-200 mx-auto" onerror="this.style.display='none';"></div>` : '';
+                        
+                        attachmentHtml = `
+                            <div class="mt-2 pt-3 border-t border-teal-200">
+                                <p class="text-sm font-bold text-teal-800 mb-2"><i class="fas fa-paperclip mr-1"></i>本日附件：<a href="${result.fileUrl}" target="_blank" class="text-blue-600 underline hover:text-blue-800">點此開啟原始檔案</a></p>
+                                ${imgTag}
+                            </div>`;
+                    }
+
+                    // 渲染畫面
+                    section.innerHTML = `
+                        <div class="bg-white rounded-2xl border-t-4 border-teal-500 p-5 shadow-md">
+                            <h4 class="text-base font-black text-teal-700 mb-3 flex items-center border-b border-gray-100 pb-2">
+                                <i class="fas fa-book-open mr-2"></i> ${date.replace(/-/g, '/')} 聯絡簿
+                            </h4>
+                            ${contentHtml}
+                            ${attachmentHtml}
+                            <p class="text-xs text-gray-400 mt-4 text-right border-t border-gray-50 pt-2"><i class="fas fa-user-edit mr-1"></i>發布者：${result.teacher || '老師/學藝股長'}</p>
                         </div>`;
                 } else {
-                    document.getElementById('announcement-section').innerHTML = `
-                        <div class="bg-gray-50 rounded-2xl border border-dashed border-gray-300 p-8 text-center text-gray-500 mt-4 shadow-sm">
-                            <i class="fas fa-bed text-4xl mb-3 text-gray-300"></i>
-                            <p class="font-bold">本日尚無聯絡簿事項</p>
-                            <p class="text-sm mt-1 text-gray-400">老師或幹部還沒有發布公告喔！</p>
-                        </div>`;
+                    section.innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-lg font-bold border border-red-200"><i class="fas fa-exclamation-triangle mr-2"></i>無法獲取資料：${result.message}</div>`;
                 }
-            } catch (error) { 
-                document.getElementById('loading-msg').classList.add('hidden');
-                document.getElementById('announcement-section').innerHTML = '<span class="text-red-500">連線異常，請檢查網路。</span>'; 
+            } catch(e) {
+                section.innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-lg font-bold border border-red-200"><i class="fas fa-wifi mr-2"></i>網路連線異常，請稍後再試。</div>`;
+            } finally {
+                loadingMsg.classList.add('hidden');
             }
         }
 
-        function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+        function logout() { 
+            sessionStorage.clear(); 
+            window.location.href = 'login.html'; 
+        }
     </script>
 </body>
 </html>
