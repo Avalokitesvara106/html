@@ -190,6 +190,8 @@
                             sessionStorage.setItem('assignedClasses', JSON.stringify(result.classes || [])); 
                             sessionStorage.setItem('teacherClasses', JSON.stringify(result.classes || []));  
                             sessionStorage.setItem('teacherSubjects', JSON.stringify(result.subjects || []));
+                            // 🟢 請在這裡加上這一行：儲存導師班級
+                            if (result.homeroom) sessionStorage.setItem('homeroom', result.homeroom);
                         }
 
                         // 登入成功視覺回饋
@@ -223,3 +225,4 @@
     </script>
 </body>
 </html>
+
