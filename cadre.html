@@ -74,6 +74,7 @@
                 <div class="mb-4 bg-orange-50 p-3 rounded-lg border border-orange-100">
                     <label class="block text-sm font-bold text-orange-700 mb-2"><i class="fas fa-camera mr-1"></i>上傳黑板照片 (上限 5MB)</label>
                     <input type="file" id="academic-file" accept="image/*,.pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-white file:text-orange-600 hover:file:bg-orange-100 cursor-pointer">
+                    <div id="academic-file-link" class="mt-2 text-sm text-gray-500"></div>
                 </div>
 
                 <button id="btn-academic-submit" onclick="submitAcademic()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-orange-600 transition"><i class="fas fa-paper-plane mr-2"></i> 上傳並發布</button>
@@ -163,6 +164,11 @@
             
             dateInput.addEventListener('change', () => {
                 if (cadreTitle.includes('風紀')) { closeAttendanceArea(); fetchSchedule(); }
+                // 🟢 選擇日期改變時，如果是學藝股長，自動去載入該日的聯絡簿
+                if (cadreTitle.includes('學藝') && !document.getElementById('section-academic').classList.contains('hidden')) { 
+                    loadAcademic(); 
+                }
+                
                 ['common', 'hygiene', 'it'].forEach(mode => { 
                     document.getElementById(`${mode}-list`).innerHTML = '<p class="text-center text-gray-400 text-sm py-4">請重新載入名單</p>'; 
                     document.getElementById(`btn-${mode}-save`).classList.add('hidden'); 
@@ -188,6 +194,11 @@
                     tabEl.className = `flex-1 min-w-[45%] py-2.5 bg-white text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200 font-bold text-sm transition-all`; 
                 }
             });
+
+            // 🟢 切換到學藝頁籤時，自動載入當日資料
+            if (target === 'academic') {
+                loadAcademic();
+            }
         }
 
         function logout() { 
@@ -344,12 +355,46 @@
         // ==========================================
         // 模組：學藝股長 (聯絡簿與檔案上傳)
         // ==========================================
+
+        // 🟢 新增：從資料庫讀取目前的聯絡簿與檔案
+        async function loadAcademic() {
+            const date = document.getElementById('work-date').value;
+            const btn = document.getElementById('btn-academic-submit'); 
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 載入中...`; 
+            btn.disabled = true; 
+            
+            try {
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'loadAnnouncement', date: date, className: stuClass }) 
+                });
+                const result = await response.json();
+                
+                if(result.success) {
+                    // 填入文字內容
+                    document.getElementById('academic-content').value = result.content || "";
+                    
+                    // 判斷並顯示附件連結
+                    const linkDiv = document.getElementById('academic-file-link');
+                    if(result.fileUrl) {
+                        linkDiv.innerHTML = `✅ 目前已有附件：<a href="${result.fileUrl}" target="_blank" class="text-orange-600 font-bold underline hover:text-orange-800">點此查看檔案</a> <span class="text-xs text-gray-400 ml-2">(若重新上傳將會覆蓋)</span>`;
+                    } else {
+                        linkDiv.innerHTML = `<span class="text-gray-400">目前無附件</span>`;
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+            } finally {
+                btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 上傳並發布`; 
+                btn.disabled = false; 
+            }
+        }
+
         async function submitAcademic() { 
             const c = document.getElementById('academic-content').value.trim(); 
             const fileInput = document.getElementById('academic-file');
             const file = fileInput.files[0];
             
-            // 🟢 修正防呆邏輯：有打字「或是」有選檔案，就可以發布！
             if (!c && !file) {
                 return alert('請輸入聯絡簿內容，或是選擇上傳黑板照片！'); 
             }
@@ -366,7 +411,6 @@
                 teacherName: `${cadreTitle} ${stuName}` 
             };
 
-            // 如果有選取檔案，轉為 Base64
             if (file) {
                 if (file.size > 5 * 1024 * 1024) { 
                     alert("檔案請勿超過 5MB！");
@@ -396,8 +440,8 @@
                 const result = await res.json(); 
                 if(result.success) { 
                     alert('🎉 發布成功！'); 
-                    document.getElementById('academic-content').value = ''; 
-                    document.getElementById('academic-file').value = '';
+                    document.getElementById('academic-file').value = ''; // 清空選擇的檔案
+                    loadAcademic(); // 🟢 重新載入，顯示剛剛上傳的網址
                 } else {
                     alert('發布失敗：' + result.message);
                 }
@@ -454,7 +498,6 @@
             }
         }
 
-        // 🌟 批次指派邏輯
         function applyBatchAssign(mode) {
             const input = document.getElementById(`${mode}-assign-input`).value.trim();
             if (!input) {
