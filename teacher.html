@@ -401,12 +401,11 @@
                     document.getElementById('bulletin-content').value = result.content || ""; 
                     
                     const linkDiv = document.getElementById('bulletin-file-link');
-                    if(result.fileUrl) {
-                        // 🪄 魔法轉換：擷取 ID 變為直連圖片
-                        let fileIdMatch = result.fileUrl.match(/\/d\/(.+?)\//);
-                        let fileId = fileIdMatch ? fileIdMatch[1] : '';
-                        let imgTag = fileId ? `<div class="mt-3"><img src="https://drive.google.com/uc?export=view&id=${fileId}" class="max-h-60 rounded-lg shadow-sm border border-gray-200" onerror="this.style.display='none';"></div>` : '';
-                        
+                   if(result.fileUrl) {
+                        // 🪄 改用官方縮圖 API (thumbnail) 來繞過 Google 阻擋
+                        let fileIdMatch = result.fileUrl.match(/[-\w]{25,}/);
+                        let fileId = fileIdMatch ? fileIdMatch[0] : '';
+                        let imgTag = fileId ? `<div class="mt-3"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-h-60 rounded-lg shadow-sm border border-gray-200" onerror="this.style.display='none';"></div>` : '';
                         linkDiv.innerHTML = `✅ 目前附件：<a href="${result.fileUrl}" target="_blank" class="text-blue-600 font-bold underline hover:text-blue-800">點此開啓原始檔案</a> <span class="text-xs text-gray-400 ml-2">(若重新上傳將會覆蓋)</span>${imgTag}`;
                     } else {
                         linkDiv.innerHTML = `<span class="text-gray-400">目前無附件</span>`;
@@ -470,5 +469,6 @@
     </script>
 </body>
 </html>
+
 
 
