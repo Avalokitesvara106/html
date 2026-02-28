@@ -199,7 +199,14 @@
             const classContainer = document.getElementById('classContainer'), subjContainer = document.getElementById('subjectContainer'), examContainer = document.getElementById('examNameContainer');
             const tableContainer = document.getElementById('table-container'), bulletinContainer = document.getElementById('bulletin-container'), hrContainer = document.getElementById('homeroom-container');
 
-            tabs.forEach(t => { let el = document.getElementById(`tab-${t}`); if(el) el.className = "flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"; });
+            // 🟢 修正：切換標籤時，保留非導師的 hidden 屬性
+            tabs.forEach(t => { 
+                let el = document.getElementById(`tab-${t}`); 
+                if(el) {
+                    if (t === 'homeroom' && !homeroomClass) return; // 防呆：如果不是導師，絕對不要動這顆按鈕
+                    el.className = "flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"; 
+                }
+            });
             tableContainer.classList.add('hidden'); bulletinContainer.classList.add('hidden'); hrContainer.classList.add('hidden');
             
             let activeTab = document.getElementById(`tab-${mode}`);
@@ -213,7 +220,6 @@
                 classContainer.classList.remove('hidden'); subjContainer.classList.remove('hidden'); examContainer.classList.remove('hidden'); tableContainer.classList.remove('hidden'); 
                 document.getElementById('examNameLabel').innerText = '考試名稱 (可點選或輸入)'; examNameInput.placeholder = '例: 第一單元'; fetchSubjectSchedule();
             } else if (mode === 'submission') {
-                // 🟢 作業繳交模式
                 classContainer.classList.remove('hidden'); subjContainer.classList.add('hidden'); examContainer.classList.remove('hidden'); tableContainer.classList.remove('hidden');
                 document.getElementById('examNameLabel').innerText = '物品/作業名稱 (可點選或輸入)'; examNameInput.placeholder = '例: 國文學習單'; fetchExistingItems();
             } else if (mode === 'announcement') {
@@ -233,9 +239,6 @@
 
         function executeLoad() { if (currentMode === 'homeroom') loadHomeroomOverview(); else if (currentMode === 'announcement') loadBulletin(); else loadStudentList(); }
 
-        // ==========================================
-        // 🌟 批次指派神器 (適用於 submission 模式)
-        // ==========================================
         function applyBatchAssign() {
             if (currentMode !== 'submission') return;
             const input = document.getElementById('batch-assign-input').value.trim();
@@ -380,10 +383,7 @@
             link.setAttribute("download", `匯出資料_${datePicker.value}_${classSelect.value}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        // ==========================================
-        // 👑 導師儀表板 (維持原樣)
-        // ==========================================
-        async function loadHomeroomOverview() { /*略同前版*/ const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHomeroomOverview', date: datePicker.value, className: homeroomClass }) }); const result = await response.json(); if (result.success) renderHomeroom(result.data); else alert('失敗：'+result.message); } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
+        async function loadHomeroomOverview() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHomeroomOverview', date: datePicker.value, className: homeroomClass }) }); const result = await response.json(); if (result.success) renderHomeroom(result.data); else alert('失敗：'+result.message); } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
         function renderHomeroom(data) { const attList = document.getElementById('hr-attendance-list'); if (data.abnormalAttendance.length === 0) attList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 今日無異常</p>'; else { let html = ''; data.abnormalAttendance.forEach(a => { let badge = a.status === 'absent' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺席</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">遲到</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${a.studentId}</span>${a.name} <span class="text-gray-400 text-xs ml-1">(${a.subject})</span></div>${badge}</div>`; }); attList.innerHTML = html; } const subList = document.getElementById('hr-submission-list'); if (data.missingSubmissions.length === 0) subList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 尚無未交項目</p>'; else { let html = ''; data.missingSubmissions.forEach(s => { let badge = s.status === 'missing' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺交/未掃</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">未交/待加強</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${s.studentId}</span>${s.name}</div><div class="text-xs text-gray-500 mt-0.5">${s.itemName} ${s.date !== datePicker.value ? '<span class="text-red-400">(舊欠)</span>' : ''}</div></div>${badge}</div>`; }); subList.innerHTML = html; } const leaveList = document.getElementById('hr-leave-list'); if (data.leaveRequests.length === 0) leaveList.innerHTML = '<p class="text-gray-500 bg-gray-50 p-3 rounded-lg text-center font-bold">無請假紀錄</p>'; else { let html = ''; data.leaveRequests.forEach(l => { html += `<div class="border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="flex justify-between mb-1"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${l.studentId}</span>${l.name}</div><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">${l.type}</span></div><div class="text-xs text-gray-500 bg-gray-50 p-1.5 rounded">事由: ${l.reason}</div></div>`; }); leaveList.innerHTML = html; } }
         async function loadBulletin() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) }); const result = await response.json(); if(result.success) document.getElementById('bulletin-content').value = result.content || ""; } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
         async function saveBulletin() { const content = document.getElementById('bulletin-content').value; if(!content.trim()) return alert("請輸入內容！"); const btn = document.getElementById('save-bulletin-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveAnnouncement', date: datePicker.value, className: classSelect.value, content: content, teacherName: sessionStorage.getItem('username') }) }); const result = await res.json(); if(result.success) alert('🎉 發布成功！'); } catch(e){} finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; } }
