@@ -62,7 +62,11 @@
                 </div>
 
                 <div id="common-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請輸入名稱並載入名單</p></div>
-                <button id="btn-common-save" onclick="saveSubData('common')" class="hidden w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-blue-700 transition"><i class="fas fa-save mr-2"></i> 儲存繳交進度</button>
+                
+                <div id="action-bar-common" class="hidden flex gap-2 mt-4">
+                    <button onclick="quickDoneSub('common')" class="w-1/3 bg-green-100 text-green-700 font-bold py-3 rounded-lg shadow-sm hover:bg-green-200 transition text-sm"><i class="fas fa-check-double mr-1"></i>全班已交</button>
+                    <button id="btn-common-save" onclick="saveSubData('common')" class="w-2/3 bg-blue-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-blue-700 transition"><i class="fas fa-save mr-2"></i> 儲存進度</button>
+                </div>
             </div>
         </section>
 
@@ -88,7 +92,11 @@
                     <button id="btn-hygiene-load" onclick="loadSubData('hygiene')" class="bg-teal-50 text-teal-600 font-bold py-1.5 px-3 rounded-lg border border-teal-200 hover:bg-teal-100 text-sm">載入名單</button>
                 </div>
                 <div id="hygiene-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div>
-                <button id="btn-hygiene-save" onclick="saveSubData('hygiene')" class="hidden w-full bg-teal-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-teal-700 transition"><i class="fas fa-save mr-2"></i> 儲存打掃紀錄</button>
+                
+                <div id="action-bar-hygiene" class="hidden flex gap-2 mt-4">
+                    <button onclick="quickDoneSub('hygiene')" class="w-1/3 bg-teal-100 text-teal-700 font-bold py-3 rounded-lg shadow-sm hover:bg-teal-200 transition text-sm"><i class="fas fa-check-double mr-1"></i>全班乾淨</button>
+                    <button id="btn-hygiene-save" onclick="saveSubData('hygiene')" class="w-2/3 bg-teal-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-teal-700 transition"><i class="fas fa-save mr-2"></i> 儲存打掃紀錄</button>
+                </div>
             </div>
         </section>
 
@@ -99,7 +107,11 @@
                     <button id="btn-leader-load" onclick="loadSubData('leader')" class="bg-purple-50 text-purple-600 font-bold py-1.5 px-3 rounded-lg border border-purple-200 hover:bg-purple-100 text-sm">載入名單</button>
                 </div>
                 <div id="leader-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div>
-                <button id="btn-leader-save" onclick="saveSubData('leader')" class="hidden w-full bg-purple-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-purple-700 transition"><i class="fas fa-save mr-2"></i> 儲存手機繳交</button>
+                
+                <div id="action-bar-leader" class="hidden flex gap-2 mt-4">
+                    <button onclick="quickDoneSub('leader')" class="w-1/3 bg-purple-100 text-purple-700 font-bold py-3 rounded-lg shadow-sm hover:bg-purple-200 transition text-sm"><i class="fas fa-check-double mr-1"></i>全班已交</button>
+                    <button id="btn-leader-save" onclick="saveSubData('leader')" class="w-2/3 bg-purple-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-purple-700 transition"><i class="fas fa-save mr-2"></i> 儲存手機紀錄</button>
+                </div>
             </div>
         </section>
 
@@ -170,9 +182,9 @@
                 
                 ['common', 'hygiene', 'leader'].forEach(mode => { 
                     const listEl = document.getElementById(`${mode}-list`);
-                    const saveEl = document.getElementById(`btn-${mode}-save`);
+                    const actionEl = document.getElementById(`action-bar-${mode}`);
                     if (listEl) listEl.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">請重新載入名單</p>'; 
-                    if (saveEl) saveEl.classList.add('hidden'); 
+                    if (actionEl) actionEl.classList.add('hidden'); 
                     if (mode === 'common') document.getElementById('common-assign-area').classList.add('hidden'); 
                 });
             });
@@ -454,10 +466,9 @@
         }
 
         // ==========================================
-        // 🟢 模組三：物品繳交 (包含 leader 手機繳交)
+        // 模組三：物品繳交 (新增一鍵全班已交功能)
         // ==========================================
         
-        // 🟢 修正：將 key 從 it 改為 leader，itemName 改為 手機繳交
         let subData = { 
             common: { data: [], itemName: '' }, 
             hygiene: { data: [], itemName: '打掃工作' }, 
@@ -476,11 +487,6 @@
             const btn = document.getElementById(`btn-${mode}-load`);
             const listDiv = document.getElementById(`${mode}-list`);
             
-            if (!btn || !listDiv) {
-                console.error("找不到對應的按鈕或清單容器:", mode);
-                return;
-            }
-
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; 
             btn.disabled = true;
             listDiv.innerHTML = '<p class="text-center text-blue-500 py-4"><i class="fas fa-circle-notch fa-spin mr-2"></i>載入中...</p>';
@@ -495,7 +501,9 @@
                 if (result.success) { 
                     subData[mode].data = result.data; 
                     renderSubList(mode); 
-                    document.getElementById(`btn-${mode}-save`).classList.remove('hidden'); 
+                    
+                    // 🟢 載入成功後，顯示包含「一鍵全交」與「儲存」的工具列
+                    document.getElementById(`action-bar-${mode}`).classList.remove('hidden'); 
                     
                     if(mode === 'common') document.getElementById('common-assign-area').classList.remove('hidden');
                 } else {
@@ -549,6 +557,19 @@
             renderSubList(mode);
             alert(`✅ 快速指派成功！\n已指派給 ${assignedCount} 位學生，其餘學生已自動設為「免交」。\n請確認無誤後，點擊最下方【儲存】才會生效。`);
         }
+        
+        // 🟢 專屬物品繳交的一鍵全班已交功能
+        function quickDoneSub(mode) {
+            if (!subData[mode] || !subData[mode].data || subData[mode].data.length === 0) return;
+            
+            subData[mode].data.forEach(st => {
+                // 如果該學生不是「免交」，就將狀態設定為「已交 (done)」
+                if (st.status !== 'exempt') {
+                    st.status = 'done';
+                }
+            });
+            renderSubList(mode);
+        }
 
         function renderSubList(mode) {
             let html = '';
@@ -570,7 +591,6 @@
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">待加強</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'missing')" class="px-2 py-1 text-xs font-bold rounded ${s === 'missing' ? 'bg-red-500 text-white shadow' : 'bg-white text-gray-500 border'}">未打掃</button>`;
                 } else if (mode === 'leader') {
-                    // 🟢 確保 leader 模式下顯示正確的手機繳交按鈕
                     html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'none')" class="px-2 py-1 text-xs font-bold rounded ${s === 'none' ? 'bg-gray-500 text-white shadow' : 'bg-white text-gray-500 border'}">未攜帶</button>`;
