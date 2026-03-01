@@ -164,15 +164,16 @@
             
             dateInput.addEventListener('change', () => {
                 if (cadreTitle.includes('風紀')) { closeAttendanceArea(); fetchSchedule(); }
-                // 🟢 選擇日期改變時，如果是學藝股長，自動去載入該日的聯絡簿
                 if (cadreTitle.includes('學藝') && !document.getElementById('section-academic').classList.contains('hidden')) { 
                     loadAcademic(); 
                 }
                 
                 ['common', 'hygiene', 'leader'].forEach(mode => { 
-                    document.getElementById(`${mode}-list`).innerHTML = '<p class="text-center text-gray-400 text-sm py-4">請重新載入名單</p>'; 
-                    document.getElementById(`btn-${mode}-save`).classList.add('hidden'); 
-                    if(mode === 'common') document.getElementById('common-assign-area').classList.add('hidden'); 
+                    const listEl = document.getElementById(`${mode}-list`);
+                    const saveEl = document.getElementById(`btn-${mode}-save`);
+                    if (listEl) listEl.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">請重新載入名單</p>'; 
+                    if (saveEl) saveEl.classList.add('hidden'); 
+                    if (mode === 'common') document.getElementById('common-assign-area').classList.add('hidden'); 
                 });
             });
         });
@@ -195,7 +196,6 @@
                 }
             });
 
-            // 🟢 切換到學藝頁籤時，自動載入當日資料
             if (target === 'academic') {
                 loadAcademic();
             }
@@ -355,9 +355,6 @@
         // ==========================================
         // 模組：學藝股長 (聯絡簿與檔案上傳)
         // ==========================================
-
-        // 🟢 新增：從資料庫讀取目前的聯絡簿與檔案
-// 🟢 升級版：從資料庫讀取目前的聯絡簿與圖片預覽
         async function loadAcademic() {
             const date = document.getElementById('work-date').value;
             const btn = document.getElementById('btn-academic-submit'); 
@@ -375,8 +372,7 @@
                     document.getElementById('academic-content').value = result.content || "";
                     
                     const linkDiv = document.getElementById('academic-file-link');
-                if(result.fileUrl) {
-                        // 🪄 改用官方縮圖 API (thumbnail) 來繞過 Google 阻擋
+                    if(result.fileUrl) {
                         let fileIdMatch = result.fileUrl.match(/[-\w]{25,}/);
                         let fileId = fileIdMatch ? fileIdMatch[0] : '';
                         
@@ -393,6 +389,7 @@
                 btn.disabled = false; 
             }
         }
+        
         async function submitAcademic() { 
             const c = document.getElementById('academic-content').value.trim(); 
             const fileInput = document.getElementById('academic-file');
@@ -443,8 +440,8 @@
                 const result = await res.json(); 
                 if(result.success) { 
                     alert('🎉 發布成功！'); 
-                    document.getElementById('academic-file').value = ''; // 清空選擇的檔案
-                    loadAcademic(); // 🟢 重新載入，顯示剛剛上傳的網址
+                    document.getElementById('academic-file').value = ''; 
+                    loadAcademic(); 
                 } else {
                     alert('發布失敗：' + result.message);
                 }
@@ -457,9 +454,15 @@
         }
 
         // ==========================================
-        // 模組三：物品繳交 (包含免交與批次派發)
+        // 🟢 模組三：物品繳交 (包含 leader 手機繳交)
         // ==========================================
-        let subData = { common: { data: [], itemName: '' }, hygiene: { data: [], itemName: '打掃工作' }, it: { data: [], itemName: '手機繳交' } };
+        
+        // 🟢 修正：將 key 從 it 改為 leader，itemName 改為 手機繳交
+        let subData = { 
+            common: { data: [], itemName: '' }, 
+            hygiene: { data: [], itemName: '打掃工作' }, 
+            leader: { data: [], itemName: '手機繳交' } 
+        };
         
         async function loadSubData(mode) {
             let itemName = subData[mode].itemName;
@@ -473,6 +476,11 @@
             const btn = document.getElementById(`btn-${mode}-load`);
             const listDiv = document.getElementById(`${mode}-list`);
             
+            if (!btn || !listDiv) {
+                console.error("找不到對應的按鈕或清單容器:", mode);
+                return;
+            }
+
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; 
             btn.disabled = true;
             listDiv.innerHTML = '<p class="text-center text-blue-500 py-4"><i class="fas fa-circle-notch fa-spin mr-2"></i>載入中...</p>';
@@ -562,6 +570,7 @@
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">待加強</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'missing')" class="px-2 py-1 text-xs font-bold rounded ${s === 'missing' ? 'bg-red-500 text-white shadow' : 'bg-white text-gray-500 border'}">未打掃</button>`;
                 } else if (mode === 'leader') {
+                    // 🟢 確保 leader 模式下顯示正確的手機繳交按鈕
                     html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'none')" class="px-2 py-1 text-xs font-bold rounded ${s === 'none' ? 'bg-gray-500 text-white shadow' : 'bg-white text-gray-500 border'}">未攜帶</button>`;
@@ -613,5 +622,3 @@
     </script>
 </body>
 </html>
-
-
