@@ -47,11 +47,13 @@
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">日期</label><input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></div>
                     <div id="classContainer"><label class="block text-sm font-medium text-gray-700 mb-1">班級</label><select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></select></div>
                     <div id="subjectContainer"><label class="block text-sm font-medium text-gray-700 mb-1">節次 / 科目</label><select id="subjectSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"><option value="">載入中...</option></select></div>
-                    <div id="examNameContainer" class="hidden">
-                        <label id="examNameLabel" class="block text-sm font-bold text-blue-600 mb-1">考試名稱 (可點選或輸入)</label>
-                        <input type="text" id="examNameInput" list="examNameList" placeholder="例: 第一單元" class="w-full border-blue-300 border-2 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
-                        <datalist id="examNameList"></datalist>
+                    
+                    <div id="examNameContainer" class="hidden md:col-span-2">
+                        <label id="examNameLabel" class="block text-sm font-bold text-blue-600 mb-1">名稱 (可輸入新名稱或點擊下方標籤)</label>
+                        <input type="text" id="examNameInput" placeholder="例: 第一單元" class="w-full border-blue-300 border-2 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 mb-1">
+                        <div id="existing-items-tags" class="flex flex-wrap gap-1.5 min-h-[24px] items-center"></div>
                     </div>
+                    
                     <div><button id="load-btn" onclick="executeLoad()" class="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition shadow"><i class="fas fa-cloud-download-alt mr-1"></i> 載入資料</button></div>
                 </div>
             </div>
@@ -167,9 +169,12 @@
             });
         });
 
-        [subjectSelect, examNameInput].forEach(input => {
-            input.addEventListener('change', () => { resetTableState(); if (input === subjectSelect) fetchExistingItems(); });
+        [subjectSelect].forEach(input => {
+            input.addEventListener('change', () => { resetTableState(); if (input === subjectSelect && currentMode === 'score') fetchExistingItems(); });
         });
+        
+        // 輸入框改變時清空下方，提醒重新載入
+        examNameInput.addEventListener('input', () => { resetTableState(); });
 
         function resetTableState() {
             studentData = []; document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入資料」</td></tr>';
@@ -182,21 +187,40 @@
 
         window.addEventListener('beforeunload', function (e) { if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '未儲存離開？'; } });
 
+        // 🟢 智慧標籤抓取邏輯
         async function fetchExistingItems() {
             if (!classSelect.value) return;
             const isSub = currentMode === 'submission';
             if (!isSub && !subjectSelect.value) return;
             
+            const tagsContainer = document.getElementById('existing-items-tags');
+            tagsContainer.innerHTML = '<span class="text-xs text-gray-400">查詢已有項目中...</span>';
+
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: isSub ? 'getSubmissionItems' : 'getExamNames', date: datePicker.value, className: classSelect.value, subject: subjectSelect.value }) });
                 const result = await response.json();
                 if (result.success) {
-                    const datalist = document.getElementById('examNameList'); datalist.innerHTML = ''; 
-                    const list = isSub ? result.items : result.exams;
-                    list.forEach(item => datalist.appendChild(new Option(item, item)));
-                    examNameInput.placeholder = list.length > 0 && !examNameInput.value ? "點選舊項目或輸入新項目" : `請輸入新${isSub ? '作業' : '考試'}名稱`;
+                    const list = isSub ? result.items.filter(item => item !== '手機繳交' && !item.includes('打掃')) : result.exams;
+                    
+                    if (list.length === 0) {
+                        tagsContainer.innerHTML = '<span class="text-xs text-gray-400"><i class="fas fa-info-circle mr-1"></i>今日尚無建立項目，請直接輸入新名稱</span>';
+                    } else {
+                        let html = '<span class="text-xs text-gray-500 mr-1">今日已有項目：</span>';
+                        list.forEach(item => {
+                            html += `<button onclick="selectExistingItem('${item}')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold transition shadow-sm">${item}</button>`;
+                        });
+                        tagsContainer.innerHTML = html;
+                    }
                 }
-            } catch (e) {}
+            } catch (e) {
+                tagsContainer.innerHTML = '<span class="text-xs text-red-400">查詢失敗</span>';
+            }
+        }
+        
+        // 🟢 點擊智慧標籤，自動填入並載入！
+        function selectExistingItem(itemName) {
+            document.getElementById('examNameInput').value = itemName;
+            loadStudentList(); 
         }
 
         function switchMode(mode) {
@@ -225,10 +249,10 @@
                 classContainer.classList.remove('hidden'); subjContainer.classList.remove('hidden'); examContainer.classList.add('hidden'); tableContainer.classList.remove('hidden'); fetchSubjectSchedule();
             } else if (mode === 'score') {
                 classContainer.classList.remove('hidden'); subjContainer.classList.remove('hidden'); examContainer.classList.remove('hidden'); tableContainer.classList.remove('hidden'); 
-                document.getElementById('examNameLabel').innerText = '考試名稱 (可點選或輸入)'; examNameInput.placeholder = '例: 第一單元'; fetchSubjectSchedule();
+                document.getElementById('examNameLabel').innerText = '考試名稱 (可輸入新名稱或點擊下方標籤)'; examNameInput.placeholder = '例: 第一單元'; fetchSubjectSchedule();
             } else if (mode === 'submission') {
                 classContainer.classList.remove('hidden'); subjContainer.classList.add('hidden'); examContainer.classList.remove('hidden'); tableContainer.classList.remove('hidden');
-                document.getElementById('examNameLabel').innerText = '物品/作業名稱 (可點選或輸入)'; examNameInput.placeholder = '例: 國文學習單'; fetchExistingItems();
+                document.getElementById('examNameLabel').innerText = '物品/作業名稱 (可輸入新名稱或點擊下方標籤)'; examNameInput.placeholder = '例: 國文學習單'; fetchExistingItems();
             } else if (mode === 'announcement') {
                 classContainer.classList.remove('hidden'); subjContainer.classList.add('hidden'); examContainer.classList.add('hidden'); bulletinContainer.classList.remove('hidden'); loadBulletin();
             }
@@ -292,7 +316,6 @@
                     studentData = result.data; renderTable();
                     document.getElementById('batch-save-btn').classList.remove('hidden');
                     
-                    // 🟢 動態顯示底部按鈕
                     if(currentMode === 'attendance') {
                         document.getElementById('quick-fill-btn').classList.remove('hidden');
                         document.getElementById('quick-done-btn').classList.add('hidden');
@@ -308,7 +331,6 @@
 
         function quickFill() { if (currentMode !== 'attendance') return; studentData.forEach(st => { if (!st.isSaved && st.attendance !== 'leave') { st.attendance = 'present'; } }); renderTable(); }
         
-        // 🟢 專屬物品繳交的一鍵全班已交功能
         function quickDone() { 
             if (currentMode !== 'submission') return; 
             studentData.forEach(st => { 
@@ -394,7 +416,12 @@
                 let action = currentMode === 'attendance' ? 'batchSaveAttendance' : (currentMode === 'score' ? 'batchSaveScores' : 'batchSaveSubmissions');
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, records }) });
                 const result = await response.json();
-                if (result.success) { studentData.forEach(st => st.isSaved = true); if (currentMode === 'score' || currentMode === 'submission') fetchExistingItems(); renderTable(); alert('🎉 儲存成功！'); } 
+                if (result.success) { 
+                    studentData.forEach(st => st.isSaved = true); 
+                    if (currentMode === 'score' || currentMode === 'submission') fetchExistingItems(); // 儲存後刷新標籤
+                    renderTable(); 
+                    alert('🎉 儲存成功！'); 
+                } 
                 else alert('❌ 失敗：' + result.message);
             } catch (error) { alert('連線異常。'); }
             btn.innerHTML = `<i class="fas fa-bolt mr-2"></i> 極速一鍵儲存`; btn.disabled = false;
