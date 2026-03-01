@@ -98,7 +98,7 @@
                     <h3 class="font-bold text-purple-600"><i class="fas fa-mobile-alt mr-2"></i>手機繳交狀況</h3>
                     <button id="btn-it-load" onclick="loadSubData('leader')" class="bg-purple-50 text-purple-600 font-bold py-1.5 px-3 rounded-lg border border-purple-200 hover:bg-purple-100 text-sm">載入名單</button>
                 </div>
-                <div id="it-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div>
+                <div id="leader-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div>
                 <button id="btn-it-save" onclick="saveSubData('leader')" class="hidden w-full bg-purple-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-purple-700 transition"><i class="fas fa-save mr-2"></i> 儲存手機繳交</button>
             </div>
         </section>
@@ -169,7 +169,7 @@
                     loadAcademic(); 
                 }
                 
-                ['common', 'hygiene', 'it'].forEach(mode => { 
+                ['common', 'hygiene', 'leader'].forEach(mode => { 
                     document.getElementById(`${mode}-list`).innerHTML = '<p class="text-center text-gray-400 text-sm py-4">請重新載入名單</p>'; 
                     document.getElementById(`btn-${mode}-save`).classList.add('hidden'); 
                     if(mode === 'common') document.getElementById('common-assign-area').classList.add('hidden'); 
@@ -178,7 +178,7 @@
         });
 
         function switchTab(target) {
-            const sections = ['common', 'academic', 'hygiene', 'it', 'discipline'];
+            const sections = ['common', 'academic', 'hygiene', 'leader', 'discipline'];
             sections.forEach(sec => {
                 const sectionEl = document.getElementById(`section-${sec}`);
                 const tabEl = document.getElementById(`tab-${sec}`);
@@ -561,7 +561,7 @@
                     html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">乾淨</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">待加強</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'missing')" class="px-2 py-1 text-xs font-bold rounded ${s === 'missing' ? 'bg-red-500 text-white shadow' : 'bg-white text-gray-500 border'}">未打掃</button>`;
-                } else if (mode === 'it') {
+                } else if (mode === 'leader') {
                     html += `<button onclick="setSubStatus('${mode}', ${idx}, 'done')" class="px-2 py-1 text-xs font-bold rounded ${s === 'done' ? 'bg-green-500 text-white shadow' : 'bg-white text-gray-500 border'}">已交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'pending')" class="px-2 py-1 text-xs font-bold rounded ${s === 'pending' ? 'bg-yellow-500 text-white shadow' : 'bg-white text-gray-500 border'}">未交</button>
                              <button onclick="setSubStatus('${mode}', ${idx}, 'none')" class="px-2 py-1 text-xs font-bold rounded ${s === 'none' ? 'bg-gray-500 text-white shadow' : 'bg-white text-gray-500 border'}">未攜帶</button>`;
