@@ -157,7 +157,7 @@
             let defaultTab = 'common';
             if (cadreTitle.includes('學藝')) { document.getElementById('tab-academic').classList.remove('hidden'); defaultTab = 'academic'; }
             if (cadreTitle.includes('衛生')) { document.getElementById('tab-hygiene').classList.remove('hidden'); defaultTab = 'hygiene'; }
-            if (cadreTitle.includes('班長')) { document.getElementById('tab-leader').classList.remove('hidden'); defaultTab = 'it'; }
+            if (cadreTitle.includes('班長')) { document.getElementById('tab-leader').classList.remove('hidden'); defaultTab = 'leader'; }
             if (cadreTitle.includes('風紀')) { document.getElementById('tab-discipline').classList.remove('hidden'); defaultTab = 'discipline'; fetchSchedule(); }
             
             switchTab(defaultTab);
