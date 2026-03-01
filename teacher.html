@@ -83,6 +83,10 @@
                     <div id="stats-dashboard" class="text-blue-800 font-bold text-sm">請先載入名單</div>
                     <button onclick="exportCSV()" class="bg-white border border-blue-300 text-blue-600 hover:bg-blue-100 font-bold py-1 px-3 rounded shadow-sm text-sm transition"><i class="fas fa-file-csv mr-1"></i> 匯出 CSV</button>
                 </div>
+
+                <div id="readonly-warning" class="hidden bg-red-50 text-red-600 p-3 text-sm font-bold border-b border-red-100 flex items-center justify-center">
+                    <i class="fas fa-lock mr-2"></i> 此任務由 <span id="task-creator-name" class="mx-1 underline"></span> 建立，您僅有檢視權限。
+                </div>
                 
                 <div id="batch-assign-container" class="hidden bg-indigo-50 p-4 border-b border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="flex-1 w-full">
@@ -99,7 +103,7 @@
                     </table>
                 </div>
                 
-                <div class="bg-gray-50 p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div id="bottom-action-bar" class="bg-gray-50 p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 hidden">
                     <div class="flex gap-2 w-full sm:w-auto">
                         <button id="quick-fill-btn" onclick="quickFill()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-2 px-4 rounded-lg shadow-sm transition hidden flex-1 sm:flex-none"><i class="fas fa-check-circle mr-1"></i> 一鍵全班正常</button>
                         <button id="quick-done-btn" onclick="quickDone()" class="bg-green-100 text-green-700 hover:bg-green-200 font-bold py-2 px-4 rounded-lg shadow-sm transition hidden flex-1 sm:flex-none"><i class="fas fa-check-double mr-1"></i> 一鍵全班已交</button>
@@ -118,10 +122,13 @@
         let currentMode = 'attendance', studentData = [];
         const datePicker = document.getElementById('datePicker'), classSelect = document.getElementById('classSelect'), subjectSelect = document.getElementById('subjectSelect'), examNameInput = document.getElementById('examNameInput');
         const homeroomClass = sessionStorage.getItem('homeroom') || '';
+        
+        // 🟢 取得當前老師的名字
+        const myCreatorName = sessionStorage.getItem('username') || '';
 
         document.addEventListener('DOMContentLoaded', () => {
             datePicker.valueAsDate = new Date();
-            let titleText = sessionStorage.getItem('username') + " 老師";
+            let titleText = myCreatorName + " 老師";
             if (homeroomClass) titleText += ` (👑 ${homeroomClass}班導師)`;
             document.getElementById('teacher-name-display').innerText = titleText;
 
@@ -173,21 +180,18 @@
             input.addEventListener('change', () => { resetTableState(); if (input === subjectSelect && currentMode === 'score') fetchExistingItems(); });
         });
         
-        // 輸入框改變時清空下方，提醒重新載入
         examNameInput.addEventListener('input', () => { resetTableState(); });
 
         function resetTableState() {
             studentData = []; document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入資料」</td></tr>';
-            document.getElementById('batch-save-btn').classList.add('hidden'); 
-            document.getElementById('quick-fill-btn').classList.add('hidden'); 
-            document.getElementById('quick-done-btn').classList.add('hidden');
+            document.getElementById('bottom-action-bar').classList.add('hidden');
+            document.getElementById('readonly-warning').classList.add('hidden');
             document.getElementById('stats-dashboard').innerText = "等待載入..."; 
             document.getElementById('batch-assign-container').classList.add('hidden');
         }
 
         window.addEventListener('beforeunload', function (e) { if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '未儲存離開？'; } });
 
-        // 🟢 智慧標籤抓取邏輯
         async function fetchExistingItems() {
             if (!classSelect.value) return;
             const isSub = currentMode === 'submission';
@@ -201,23 +205,17 @@
                 const result = await response.json();
                 if (result.success) {
                     const list = isSub ? result.items.filter(item => item !== '手機繳交' && !item.includes('打掃')) : result.exams;
-                    
                     if (list.length === 0) {
                         tagsContainer.innerHTML = '<span class="text-xs text-gray-400"><i class="fas fa-info-circle mr-1"></i>今日尚無建立項目，請直接輸入新名稱</span>';
                     } else {
                         let html = '<span class="text-xs text-gray-500 mr-1">今日已有項目：</span>';
-                        list.forEach(item => {
-                            html += `<button onclick="selectExistingItem('${item}')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold transition shadow-sm">${item}</button>`;
-                        });
+                        list.forEach(item => { html += `<button onclick="selectExistingItem('${item}')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold transition shadow-sm">${item}</button>`; });
                         tagsContainer.innerHTML = html;
                     }
                 }
-            } catch (e) {
-                tagsContainer.innerHTML = '<span class="text-xs text-red-400">查詢失敗</span>';
-            }
+            } catch (e) { tagsContainer.innerHTML = '<span class="text-xs text-red-400">查詢失敗</span>'; }
         }
         
-        // 🟢 點擊智慧標籤，自動填入並載入！
         function selectExistingItem(itemName) {
             document.getElementById('examNameInput').value = itemName;
             loadStudentList(); 
@@ -233,10 +231,7 @@
 
             tabs.forEach(t => { 
                 let el = document.getElementById(`tab-${t}`); 
-                if(el) {
-                    if (t === 'homeroom' && !homeroomClass) return; 
-                    el.className = "flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"; 
-                }
+                if(el) { if (t === 'homeroom' && !homeroomClass) return; el.className = "flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"; }
             });
             tableContainer.classList.add('hidden'); bulletinContainer.classList.add('hidden'); hrContainer.classList.add('hidden');
             
@@ -275,7 +270,7 @@
             const input = document.getElementById('batch-assign-input').value.trim();
             if (!input) {
                 studentData.forEach(st => { if (st.status === 'exempt') { st.status = 'pending'; st.isSaved = false; } });
-                renderTable(); return alert('已重置為「全班皆須繳交」。');
+                renderTable(false); return alert('已重置為「全班皆須繳交」。');
             }
 
             let targetSeats = new Set();
@@ -284,9 +279,7 @@
                 if (p.includes('-')) {
                     let range = p.split('-'); let start = parseInt(range[0]), end = parseInt(range[1]);
                     if (!isNaN(start) && !isNaN(end)) for(let i=start; i<=end; i++) targetSeats.add(i.toString());
-                } else {
-                    let seat = parseInt(p); if (!isNaN(seat)) targetSeats.add(seat.toString());
-                }
+                } else { let seat = parseInt(p); if (!isNaN(seat)) targetSeats.add(seat.toString()); }
             });
 
             let count = 0;
@@ -298,7 +291,7 @@
                 } else st.status = 'exempt';
                 st.isSaved = false; 
             });
-            renderTable(); alert(`✅ 成功指派給 ${count} 位學生，其餘已自動設為「免交」。\n請確認無誤後點擊最下方【儲存】！`);
+            renderTable(false); alert(`✅ 成功指派給 ${count} 位學生，其餘已自動設為「免交」。\n請確認無誤後點擊最下方【儲存】！`);
         }
 
         async function loadStudentList() {
@@ -307,41 +300,56 @@
             if (currentMode === 'submission' && !examName.trim()) return alert("請填寫物品/作業名稱！");
             
             const loadBtn = document.getElementById('load-btn'); loadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; loadBtn.disabled = true;
+            document.getElementById('readonly-warning').classList.add('hidden');
 
             try {
                 let action = currentMode === 'attendance' ? 'loadAttendance' : (currentMode === 'score' ? 'loadScores' : 'loadSubmissions');
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: action, date, className, subject, examName, itemName: examName }) });
                 const result = await response.json();
+                
                 if (result.success) {
-                    studentData = result.data; renderTable();
-                    document.getElementById('batch-save-btn').classList.remove('hidden');
+                    studentData = result.data; 
                     
-                    if(currentMode === 'attendance') {
-                        document.getElementById('quick-fill-btn').classList.remove('hidden');
-                        document.getElementById('quick-done-btn').classList.add('hidden');
+                    // 🟢 判斷是否為唯讀模式 (Read-Only)
+                    let isReadOnly = false;
+                    let isHomeroom = (homeroomClass === className); // 如果是導師，就擁有特權
+                    
+                    if (currentMode === 'submission' && result.creator && result.creator !== myCreatorName && !isHomeroom) {
+                        isReadOnly = true;
+                        document.getElementById('task-creator-name').innerText = result.creator;
+                        document.getElementById('readonly-warning').classList.remove('hidden');
                     }
-                    if(currentMode === 'submission') {
-                        document.getElementById('batch-assign-container').classList.remove('hidden');
-                        document.getElementById('quick-done-btn').classList.remove('hidden');
+
+                    renderTable(isReadOnly);
+                    
+                    // 根據權限動態顯示底部按鈕
+                    document.getElementById('bottom-action-bar').classList.remove('hidden');
+                    
+                    if (isReadOnly) {
+                        document.getElementById('batch-assign-container').classList.add('hidden');
+                        document.getElementById('quick-done-btn').classList.add('hidden');
                         document.getElementById('quick-fill-btn').classList.add('hidden');
+                        document.getElementById('batch-save-btn').classList.add('hidden');
+                    } else {
+                        document.getElementById('batch-save-btn').classList.remove('hidden');
+                        if(currentMode === 'attendance') {
+                            document.getElementById('quick-fill-btn').classList.remove('hidden');
+                            document.getElementById('quick-done-btn').classList.add('hidden');
+                        }
+                        if(currentMode === 'submission') {
+                            document.getElementById('batch-assign-container').classList.remove('hidden');
+                            document.getElementById('quick-done-btn').classList.remove('hidden');
+                            document.getElementById('quick-fill-btn').classList.add('hidden');
+                        }
                     }
                 } else alert('❌ 失敗：' + result.message);
             } catch (error) { alert('連線異常。'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; loadBtn.disabled = false; }
         }
 
-        function quickFill() { if (currentMode !== 'attendance') return; studentData.forEach(st => { if (!st.isSaved && st.attendance !== 'leave') { st.attendance = 'present'; } }); renderTable(); }
-        
-        function quickDone() { 
-            if (currentMode !== 'submission') return; 
-            studentData.forEach(st => { 
-                if (!st.isSaved && st.status !== 'exempt') { 
-                    st.status = 'done'; 
-                } 
-            }); 
-            renderTable(); 
-        }
+        function quickFill() { if (currentMode !== 'attendance') return; studentData.forEach(st => { if (!st.isSaved && st.attendance !== 'leave') { st.attendance = 'present'; } }); renderTable(false); }
+        function quickDone() { if (currentMode !== 'submission') return; studentData.forEach(st => { if (!st.isSaved && st.status !== 'exempt') { st.status = 'done'; } }); renderTable(false); }
 
-        function renderTable() {
+        function renderTable(isReadOnly = false) {
             const tbody = document.getElementById('studentTableBody'); tbody.innerHTML = '';
             let statsHTML = "";
             if (currentMode === 'attendance') {
@@ -359,8 +367,15 @@
             if(studentData.length === 0) return tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">此班級無資料</td></tr>';
 
             studentData.forEach((st, i) => {
-                const disabled = st.isSaved ? 'disabled' : '', rowClass = st.isSaved ? 'bg-gray-100' : 'bg-white';
-                const actionBtn = st.isSaved ? `<button onclick="toggleEdit(${i})" class="text-gray-500 hover:text-blue-600 px-3 py-1"><i class="fas fa-pencil-alt"></i></button>` : `<button class="text-blue-400 px-3 py-1 cursor-default"><i class="fas fa-pen"></i></button>`;
+                const disabled = (st.isSaved || isReadOnly) ? 'disabled' : ''; 
+                const rowClass = st.isSaved ? 'bg-gray-100' : 'bg-white';
+                
+                let actionBtn = '';
+                if (isReadOnly) {
+                    actionBtn = `<i class="fas fa-lock text-gray-300"></i>`;
+                } else {
+                    actionBtn = st.isSaved ? `<button onclick="toggleEdit(${i})" class="text-gray-500 hover:text-blue-600 px-3 py-1"><i class="fas fa-pencil-alt"></i></button>` : `<button class="text-blue-400 px-3 py-1 cursor-default"><i class="fas fa-pen"></i></button>`;
+                }
 
                 let tr = document.createElement('tr'); 
                 if (st.attendance === 'leave' && !st.isSaved) tr.className = `bg-blue-50 transition`;
@@ -373,9 +388,16 @@
                     let sClass = st.attendance === 'leave' ? 'w-full border rounded p-1 text-sm font-bold text-blue-600' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
                     html += `<td class="p-4"><select id="att-${i}" onchange="syncAndRender()" class="${sClass}" ${disabled}><option value="present" ${st.attendance === 'present' ? 'selected' : ''}>✅ 正常</option><option value="late" ${st.attendance === 'late' ? 'selected' : ''}>⚠️ 遲到</option><option value="absent" ${st.attendance === 'absent' ? 'selected' : ''}>❌ 缺席</option><option value="leave" ${st.attendance === 'leave' ? 'selected' : ''}>🛌 請假</option></select></td><td class="p-4"><input type="text" id="com-${i}" onchange="syncData()" value="${st.comment}" placeholder="評語" class="w-full border rounded p-1 text-sm min-w-[120px]" ${disabled}></td>`;
                 } else if (currentMode === 'submission') {
-                    let sClass = st.status === 'exempt' ? 'w-full border rounded p-1 text-sm text-gray-500' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
                     let sStatus = st.status || 'pending';
-                    html += `<td class="p-4"><select id="sub-${i}" onchange="syncAndRender()" class="${sClass}" ${disabled}><option value="done" ${sStatus === 'done' ? 'selected' : ''}>✅ 已交</option><option value="pending" ${sStatus === 'pending' ? 'selected' : ''}>⚠️ 未交</option><option value="exempt" ${sStatus === 'exempt' ? 'selected' : ''}>🚫 免交</option></select></td>`;
+                    if (isReadOnly) {
+                        // 🟢 唯讀模式：將下拉選單變成純文字徽章
+                        let badgeText = sStatus==='done'?'已交':(sStatus==='pending'?'未交':(sStatus==='exempt'?'免交':'缺交'));
+                        let badgeColor = sStatus==='done'?'bg-green-100 text-green-700':(sStatus==='pending'?'bg-yellow-100 text-yellow-700':(sStatus==='exempt'?'bg-gray-100 text-gray-500':'bg-red-100 text-red-700'));
+                        html += `<td class="p-4"><span class="${badgeColor} px-2 py-1 text-xs font-bold rounded">${badgeText}</span></td>`;
+                    } else {
+                        let sClass = st.status === 'exempt' ? 'w-full border rounded p-1 text-sm text-gray-500' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
+                        html += `<td class="p-4"><select id="sub-${i}" onchange="syncAndRender()" class="${sClass}" ${disabled}><option value="done" ${sStatus === 'done' ? 'selected' : ''}>✅ 已交</option><option value="pending" ${sStatus === 'pending' ? 'selected' : ''}>⚠️ 未交</option><option value="exempt" ${sStatus === 'exempt' ? 'selected' : ''}>🚫 免交</option></select></td>`;
+                    }
                 } else {
                     html += `<td class="p-4"><input type="number" id="sco-${i}" oninput="syncAndRender()" value="${st.score}" placeholder="分數" min="0" max="100" class="w-full border rounded p-1 text-sm" ${disabled}></td>`;
                 }
@@ -404,7 +426,11 @@
                     if (currentMode === 'score' && st.score !== "") { let s = parseFloat(st.score); if (isNaN(s) || s < 0 || s > 100) return alert(`⚠️ 學號 ${st.studentId} 的分數格式錯誤`); }
                     let rec = { date, className, studentId: st.studentId, name: st.name };
                     if (currentMode === 'attendance') { rec.subject = subject; rec.attendance = st.attendance; rec.comment = st.comment; }
-                    else if (currentMode === 'submission') { rec.itemName = examName; rec.status = st.status; }
+                    else if (currentMode === 'submission') { 
+                        rec.itemName = examName; rec.status = st.status; 
+                        // 🟢 將建立者名字送進後端
+                        rec.creatorName = myCreatorName; 
+                    }
                     else { rec.subject = subject; rec.examName = examName; rec.score = st.score; }
                     records.push(rec);
                 }
@@ -416,102 +442,19 @@
                 let action = currentMode === 'attendance' ? 'batchSaveAttendance' : (currentMode === 'score' ? 'batchSaveScores' : 'batchSaveSubmissions');
                 const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, records }) });
                 const result = await response.json();
-                if (result.success) { 
-                    studentData.forEach(st => st.isSaved = true); 
-                    if (currentMode === 'score' || currentMode === 'submission') fetchExistingItems(); // 儲存後刷新標籤
-                    renderTable(); 
-                    alert('🎉 儲存成功！'); 
-                } 
+                if (result.success) { studentData.forEach(st => st.isSaved = true); if (currentMode === 'score' || currentMode === 'submission') fetchExistingItems(); renderTable(); alert('🎉 儲存成功！'); } 
                 else alert('❌ 失敗：' + result.message);
             } catch (error) { alert('連線異常。'); }
             btn.innerHTML = `<i class="fas fa-bolt mr-2"></i> 極速一鍵儲存`; btn.disabled = false;
         }
 
-        function exportCSV() {
-            if (studentData.length === 0) return alert('沒有資料可以匯出！');
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
-            if (currentMode === 'attendance') { csvContent += "學號,姓名,狀態,評語\n"; studentData.forEach(st => csvContent += `${st.studentId},${st.name},${st.attendance === 'present' ? '正常' : (st.attendance === 'late' ? '遲到' : (st.attendance === 'absent' ? '缺席' : '請假'))},${st.comment || ''}\n`); } 
-            else if (currentMode === 'submission') { csvContent += "學號,姓名,狀態\n"; studentData.forEach(st => csvContent += `${st.studentId},${st.name},${st.status === 'done' ? '已交' : (st.status === 'exempt' ? '免交' : '未交')}\n`); }
-            else { csvContent += "學號,姓名,考試成績\n"; studentData.forEach(st => csvContent += `${st.studentId},${st.name},${st.score || ''}\n`); }
-            const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", `匯出資料_${datePicker.value}_${classSelect.value}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        }
-
+        // --- (匯出、導師儀表板、聯絡簿維持原樣，略省版面以確保完整貼上) ---
+        function exportCSV() { if (studentData.length === 0) return alert('沒有資料可以匯出！'); let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; if (currentMode === 'attendance') { csvContent += "學號,姓名,狀態,評語\n"; studentData.forEach(st => csvContent += `${st.studentId},${st.name},${st.attendance === 'present' ? '正常' : (st.attendance === 'late' ? '遲到' : (st.attendance === 'absent' ? '缺席' : '請假'))},${st.comment || ''}\n`); } else if (currentMode === 'submission') { csvContent += "學號,姓名,狀態\n"; studentData.forEach(st => csvContent += `${st.studentId},${st.name},${st.status === 'done' ? '已交' : (st.status === 'exempt' ? '免交' : '未交')}\n`); } else { csvContent += "學號,姓名,考試成績\n"; studentData.forEach(st => csvContent += `${st.studentId},${st.name},${st.score || ''}\n`); } const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `匯出資料_${datePicker.value}_${classSelect.value}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link); }
         async function loadHomeroomOverview() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHomeroomOverview', date: datePicker.value, className: homeroomClass }) }); const result = await response.json(); if (result.success) renderHomeroom(result.data); else alert('失敗：'+result.message); } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
         function renderHomeroom(data) { const attList = document.getElementById('hr-attendance-list'); if (data.abnormalAttendance.length === 0) attList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 今日無異常</p>'; else { let html = ''; data.abnormalAttendance.forEach(a => { let badge = a.status === 'absent' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺席</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">遲到</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${a.studentId}</span>${a.name} <span class="text-gray-400 text-xs ml-1">(${a.subject})</span></div>${badge}</div>`; }); attList.innerHTML = html; } const subList = document.getElementById('hr-submission-list'); if (data.missingSubmissions.length === 0) subList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 尚無未交項目</p>'; else { let html = ''; data.missingSubmissions.forEach(s => { let badge = s.status === 'missing' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺交/未掃</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">未交/待加強</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${s.studentId}</span>${s.name}</div><div class="text-xs text-gray-500 mt-0.5">${s.itemName} ${s.date !== datePicker.value ? '<span class="text-red-400">(舊欠)</span>' : ''}</div></div>${badge}</div>`; }); subList.innerHTML = html; } const leaveList = document.getElementById('hr-leave-list'); if (data.leaveRequests.length === 0) leaveList.innerHTML = '<p class="text-gray-500 bg-gray-50 p-3 rounded-lg text-center font-bold">無請假紀錄</p>'; else { let html = ''; data.leaveRequests.forEach(l => { html += `<div class="border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="flex justify-between mb-1"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${l.studentId}</span>${l.name}</div><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">${l.type}</span></div><div class="text-xs text-gray-500 bg-gray-50 p-1.5 rounded">事由: ${l.reason}</div></div>`; }); leaveList.innerHTML = html; } }
-
-        async function loadBulletin() { 
-            const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; 
-            try { 
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) }); 
-                const result = await response.json(); 
-                if(result.success) {
-                    document.getElementById('bulletin-content').value = result.content || ""; 
-                    const linkDiv = document.getElementById('bulletin-file-link');
-                    if(result.fileUrl) {
-                        let fileIdMatch = result.fileUrl.match(/[-\w]{25,}/);
-                        let fileId = fileIdMatch ? fileIdMatch[0] : '';
-                        let imgTag = fileId ? `<div class="mt-3"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-h-60 rounded-lg shadow-sm border border-gray-200" onerror="this.style.display='none';"></div>` : '';
-                        linkDiv.innerHTML = `✅ 目前附件：<a href="${result.fileUrl}" target="_blank" class="text-blue-600 font-bold underline hover:text-blue-800">點此開啓原始檔案</a> <span class="text-xs text-gray-400 ml-2">(若重新上傳將會覆蓋)</span>${imgTag}`;
-                    } else {
-                        linkDiv.innerHTML = `<span class="text-gray-400">目前無附件</span>`;
-                    }
-                }
-            } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } 
-        }
-
-        async function saveBulletin() { 
-            const content = document.getElementById('bulletin-content').value; 
-            const fileInput = document.getElementById('bulletin-file');
-            const file = fileInput.files[0];
-            
-            if(!content.trim() && !file) return alert("請輸入聯絡簿內容，或是選擇上傳檔案！"); 
-            
-            const btn = document.getElementById('save-bulletin-btn'); 
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 上傳與發布中... (可能需要幾秒鐘)`; 
-            btn.disabled = true; 
-
-            let payload = { 
-                action: 'saveAnnouncement', 
-                date: datePicker.value, 
-                className: classSelect.value, 
-                content: content, 
-                teacherName: sessionStorage.getItem('username') 
-            };
-
-            if (file) {
-                if (file.size > 5 * 1024 * 1024) {
-                    alert("檔案請勿超過 5MB！");
-                    btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false;
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    payload.fileData = e.target.result.split(',')[1]; 
-                    payload.fileName = file.name;
-                    payload.mimeType = file.type;
-                    await sendBulletinRequest(payload, btn);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                await sendBulletinRequest(payload, btn);
-            }
-        }
-
-        async function sendBulletinRequest(payload, btn) {
-            try { 
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); 
-                const result = await res.json(); 
-                if(result.success) {
-                    alert('🎉 發布成功！'); 
-                    document.getElementById('bulletin-file').value = ''; 
-                    loadBulletin(); 
-                } else alert('失敗：'+result.message); 
-            } catch(e){ alert("連線異常"); } finally { 
-                btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; 
-            } 
-        }
-
+        async function loadBulletin() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadAnnouncement', date: datePicker.value, className: classSelect.value }) }); const result = await response.json(); if(result.success) { document.getElementById('bulletin-content').value = result.content || ""; const linkDiv = document.getElementById('bulletin-file-link'); if(result.fileUrl) { let fileIdMatch = result.fileUrl.match(/[-\w]{25,}/); let fileId = fileIdMatch ? fileIdMatch[0] : ''; let imgTag = fileId ? `<div class="mt-3"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-h-60 rounded-lg shadow-sm border border-gray-200" onerror="this.style.display='none';"></div>` : ''; linkDiv.innerHTML = `✅ 目前附件：<a href="${result.fileUrl}" target="_blank" class="text-blue-600 font-bold underline hover:text-blue-800">點此開啓原始檔案</a> <span class="text-xs text-gray-400 ml-2">(若重新上傳將會覆蓋)</span>${imgTag}`; } else { linkDiv.innerHTML = `<span class="text-gray-400">目前無附件</span>`; } } } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
+        async function saveBulletin() { const content = document.getElementById('bulletin-content').value; const fileInput = document.getElementById('bulletin-file'); const file = fileInput.files[0]; if(!content.trim() && !file) return alert("請輸入聯絡簿內容，或是選擇上傳檔案！"); const btn = document.getElementById('save-bulletin-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> 上傳與發布中...`; btn.disabled = true; let payload = { action: 'saveAnnouncement', date: datePicker.value, className: classSelect.value, content: content, teacherName: sessionStorage.getItem('username') }; if (file) { if (file.size > 5 * 1024 * 1024) { alert("檔案請勿超過 5MB！"); btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; return; } const reader = new FileReader(); reader.onload = async function(e) { payload.fileData = e.target.result.split(',')[1]; payload.fileName = file.name; payload.mimeType = file.type; await sendBulletinRequest(payload, btn); }; reader.readAsDataURL(file); } else { await sendBulletinRequest(payload, btn); } }
+        async function sendBulletinRequest(payload, btn) { try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); const result = await res.json(); if(result.success) { alert('🎉 發布成功！'); document.getElementById('bulletin-file').value = ''; loadBulletin(); } else alert('失敗：'+result.message); } catch(e){ alert("連線異常"); } finally { btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false; } }
         function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
     </script>
 </body>
