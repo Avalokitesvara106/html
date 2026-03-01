@@ -46,12 +46,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">日期</label><input type="date" id="datePicker" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></div>
                     <div id="classContainer"><label class="block text-sm font-medium text-gray-700 mb-1">班級</label><select id="classSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"></select></div>
-                    
-                    <div id="subjectContainer">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">節次 / 科目</label>
-                        <select id="subjectSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"><option value="">載入中...</option></select>
-                    </div>
-                    
+                    <div id="subjectContainer"><label class="block text-sm font-medium text-gray-700 mb-1">節次 / 科目</label><select id="subjectSelect" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"><option value="">載入中...</option></select></div>
                     <div id="examNameContainer" class="hidden">
                         <label id="examNameLabel" class="block text-sm font-bold text-blue-600 mb-1">考試名稱 (可點選或輸入)</label>
                         <input type="text" id="examNameInput" list="examNameList" placeholder="例: 第一單元" class="w-full border-blue-300 border-2 rounded-lg p-2 focus:ring-2 focus:ring-blue-500">
@@ -73,13 +68,11 @@
             <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-2">
                  <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-bullhorn text-blue-500 mr-2"></i>發布班級聯絡簿 / 佈告</h3>
                  <textarea id="bulletin-content" rows="6" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500" placeholder="請輸入今日要提醒家長或學生的事項..."></textarea>
-                 
                  <div class="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
                      <label class="block text-sm font-bold text-gray-700 mb-2"><i class="fas fa-paperclip mr-1"></i>附加檔案 (照片或講義，上限 5MB)</label>
                      <input type="file" id="bulletin-file" accept="image/*,.pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer">
                      <div id="bulletin-file-link" class="mt-2 text-sm"></div>
                  </div>
-
                  <div class="mt-4 flex justify-end"><button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告</button></div>
             </div>
 
@@ -103,8 +96,12 @@
                         <tbody id="studentTableBody" class="divide-y divide-gray-100"><tr><td colspan="6" class="text-center py-8 text-gray-400">請載入資料</td></tr></tbody>
                     </table>
                 </div>
+                
                 <div class="bg-gray-50 p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div><button id="quick-fill-btn" onclick="quickFill()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-2 px-4 rounded-lg shadow-sm transition hidden w-full sm:w-auto"><i class="fas fa-check-circle mr-1"></i> 一鍵全班正常</button></div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button id="quick-fill-btn" onclick="quickFill()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-2 px-4 rounded-lg shadow-sm transition hidden flex-1 sm:flex-none"><i class="fas fa-check-circle mr-1"></i> 一鍵全班正常</button>
+                        <button id="quick-done-btn" onclick="quickDone()" class="bg-green-100 text-green-700 hover:bg-green-200 font-bold py-2 px-4 rounded-lg shadow-sm transition hidden flex-1 sm:flex-none"><i class="fas fa-check-double mr-1"></i> 一鍵全班已交</button>
+                    </div>
                     <button id="batch-save-btn" onclick="batchSave()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow transition flex items-center hidden w-full sm:w-auto justify-center"><i class="fas fa-bolt mr-2"></i> 極速一鍵儲存</button>
                 </div>
             </div>
@@ -176,7 +173,11 @@
 
         function resetTableState() {
             studentData = []; document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-red-500 font-bold">⚠️ 查詢條件已變更，請重新點擊「載入資料」</td></tr>';
-            document.getElementById('batch-save-btn').classList.add('hidden'); document.getElementById('quick-fill-btn').classList.add('hidden'); document.getElementById('stats-dashboard').innerText = "等待載入..."; document.getElementById('batch-assign-container').classList.add('hidden');
+            document.getElementById('batch-save-btn').classList.add('hidden'); 
+            document.getElementById('quick-fill-btn').classList.add('hidden'); 
+            document.getElementById('quick-done-btn').classList.add('hidden');
+            document.getElementById('stats-dashboard').innerText = "等待載入..."; 
+            document.getElementById('batch-assign-container').classList.add('hidden');
         }
 
         window.addEventListener('beforeunload', function (e) { if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '未儲存離開？'; } });
@@ -206,7 +207,6 @@
             const classContainer = document.getElementById('classContainer'), subjContainer = document.getElementById('subjectContainer'), examContainer = document.getElementById('examNameContainer');
             const tableContainer = document.getElementById('table-container'), bulletinContainer = document.getElementById('bulletin-container'), hrContainer = document.getElementById('homeroom-container');
 
-            // 保持非導師的按鈕隱藏
             tabs.forEach(t => { 
                 let el = document.getElementById(`tab-${t}`); 
                 if(el) {
@@ -246,9 +246,6 @@
 
         function executeLoad() { if (currentMode === 'homeroom') loadHomeroomOverview(); else if (currentMode === 'announcement') loadBulletin(); else loadStudentList(); }
 
-        // ==========================================
-        // 批次指派神器
-        // ==========================================
         function applyBatchAssign() {
             if (currentMode !== 'submission') return;
             const input = document.getElementById('batch-assign-input').value.trim();
@@ -294,13 +291,33 @@
                 if (result.success) {
                     studentData = result.data; renderTable();
                     document.getElementById('batch-save-btn').classList.remove('hidden');
-                    if(currentMode === 'attendance') document.getElementById('quick-fill-btn').classList.remove('hidden');
-                    if(currentMode === 'submission') document.getElementById('batch-assign-container').classList.remove('hidden');
+                    
+                    // 🟢 動態顯示底部按鈕
+                    if(currentMode === 'attendance') {
+                        document.getElementById('quick-fill-btn').classList.remove('hidden');
+                        document.getElementById('quick-done-btn').classList.add('hidden');
+                    }
+                    if(currentMode === 'submission') {
+                        document.getElementById('batch-assign-container').classList.remove('hidden');
+                        document.getElementById('quick-done-btn').classList.remove('hidden');
+                        document.getElementById('quick-fill-btn').classList.add('hidden');
+                    }
                 } else alert('❌ 失敗：' + result.message);
             } catch (error) { alert('連線異常。'); } finally { loadBtn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; loadBtn.disabled = false; }
         }
 
         function quickFill() { if (currentMode !== 'attendance') return; studentData.forEach(st => { if (!st.isSaved && st.attendance !== 'leave') { st.attendance = 'present'; } }); renderTable(); }
+        
+        // 🟢 專屬物品繳交的一鍵全班已交功能
+        function quickDone() { 
+            if (currentMode !== 'submission') return; 
+            studentData.forEach(st => { 
+                if (!st.isSaved && st.status !== 'exempt') { 
+                    st.status = 'done'; 
+                } 
+            }); 
+            renderTable(); 
+        }
 
         function renderTable() {
             const tbody = document.getElementById('studentTableBody'); tbody.innerHTML = '';
@@ -396,9 +413,6 @@
         async function loadHomeroomOverview() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 載入中`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHomeroomOverview', date: datePicker.value, className: homeroomClass }) }); const result = await response.json(); if (result.success) renderHomeroom(result.data); else alert('失敗：'+result.message); } catch(e) {} finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
         function renderHomeroom(data) { const attList = document.getElementById('hr-attendance-list'); if (data.abnormalAttendance.length === 0) attList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 今日無異常</p>'; else { let html = ''; data.abnormalAttendance.forEach(a => { let badge = a.status === 'absent' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺席</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">遲到</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${a.studentId}</span>${a.name} <span class="text-gray-400 text-xs ml-1">(${a.subject})</span></div>${badge}</div>`; }); attList.innerHTML = html; } const subList = document.getElementById('hr-submission-list'); if (data.missingSubmissions.length === 0) subList.innerHTML = '<p class="text-green-600 bg-green-50 p-3 rounded-lg text-center font-bold">🎉 尚無未交項目</p>'; else { let html = ''; data.missingSubmissions.forEach(s => { let badge = s.status === 'missing' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">缺交/未掃</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">未交/待加強</span>'; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2 last:border-0"><div><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${s.studentId}</span>${s.name}</div><div class="text-xs text-gray-500 mt-0.5">${s.itemName} ${s.date !== datePicker.value ? '<span class="text-red-400">(舊欠)</span>' : ''}</div></div>${badge}</div>`; }); subList.innerHTML = html; } const leaveList = document.getElementById('hr-leave-list'); if (data.leaveRequests.length === 0) leaveList.innerHTML = '<p class="text-gray-500 bg-gray-50 p-3 rounded-lg text-center font-bold">無請假紀錄</p>'; else { let html = ''; data.leaveRequests.forEach(l => { html += `<div class="border-b border-gray-100 pb-2 mb-2 last:border-0"><div class="flex justify-between mb-1"><div class="font-bold text-gray-700"><span class="text-gray-400 mr-2">${l.studentId}</span>${l.name}</div><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">${l.type}</span></div><div class="text-xs text-gray-500 bg-gray-50 p-1.5 rounded">事由: ${l.reason}</div></div>`; }); leaveList.innerHTML = html; } }
 
-        // ==========================================
-        // 聯絡簿載入與發布 (套用最新縮圖 API)
-        // ==========================================
         async function loadBulletin() { 
             const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`; btn.disabled = true; 
             try { 
@@ -406,14 +420,11 @@
                 const result = await response.json(); 
                 if(result.success) {
                     document.getElementById('bulletin-content').value = result.content || ""; 
-                    
                     const linkDiv = document.getElementById('bulletin-file-link');
                     if(result.fileUrl) {
-                        // 🪄 魔法轉換：使用正則表達式抓取 ID，並改用 thumbnail 官方縮圖 API
                         let fileIdMatch = result.fileUrl.match(/[-\w]{25,}/);
                         let fileId = fileIdMatch ? fileIdMatch[0] : '';
                         let imgTag = fileId ? `<div class="mt-3"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-h-60 rounded-lg shadow-sm border border-gray-200" onerror="this.style.display='none';"></div>` : '';
-                        
                         linkDiv.innerHTML = `✅ 目前附件：<a href="${result.fileUrl}" target="_blank" class="text-blue-600 font-bold underline hover:text-blue-800">點此開啓原始檔案</a> <span class="text-xs text-gray-400 ml-2">(若重新上傳將會覆蓋)</span>${imgTag}`;
                     } else {
                         linkDiv.innerHTML = `<span class="text-gray-400">目前無附件</span>`;
@@ -427,7 +438,6 @@
             const fileInput = document.getElementById('bulletin-file');
             const file = fileInput.files[0];
             
-            // 🟢 防呆：如果沒打字也沒上傳檔案，就擋下來
             if(!content.trim() && !file) return alert("請輸入聯絡簿內容，或是選擇上傳檔案！"); 
             
             const btn = document.getElementById('save-bulletin-btn'); 
@@ -442,9 +452,8 @@
                 teacherName: sessionStorage.getItem('username') 
             };
 
-            // 處理檔案 Base64 轉換
             if (file) {
-                if (file.size > 5 * 1024 * 1024) { // 限制 5MB
+                if (file.size > 5 * 1024 * 1024) {
                     alert("檔案請勿超過 5MB！");
                     btn.innerHTML = `<i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告`; btn.disabled = false;
                     return;
