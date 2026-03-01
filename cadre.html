@@ -41,7 +41,7 @@
             <button onclick="switchTab('common')" id="tab-common" class="flex-1 min-w-[45%] py-2.5 bg-blue-600 text-white rounded-xl shadow-md font-bold text-sm transition-all transform scale-105"><i class="fas fa-clipboard-check mr-1"></i> 物品繳交</button>
             <button onclick="switchTab('academic')" id="tab-academic" class="hidden flex-1 min-w-[45%] py-2.5 bg-white text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200 font-bold text-sm transition-all"><i class="fas fa-book-open mr-1"></i> 聯絡簿</button>
             <button onclick="switchTab('hygiene')" id="tab-hygiene" class="hidden flex-1 min-w-[45%] py-2.5 bg-white text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200 font-bold text-sm transition-all"><i class="fas fa-broom mr-1"></i> 打掃核實</button>
-            <button onclick="switchTab('it')" id="tab-it" class="hidden flex-1 min-w-[45%] py-2.5 bg-white text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200 font-bold text-sm transition-all"><i class="fas fa-mobile-alt mr-1"></i> 手機繳交</button>
+            <button onclick="switchTab('leader')" id="tab-leader" class="hidden flex-1 min-w-[45%] py-2.5 bg-white text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200 font-bold text-sm transition-all"><i class="fas fa-mobile-alt mr-1"></i> 手機繳交</button>
             <button onclick="switchTab('discipline')" id="tab-discipline" class="hidden flex-1 min-w-[45%] py-2.5 bg-white text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200 font-bold text-sm transition-all"><i class="fas fa-user-check mr-1"></i> 出席狀況</button>
         </div>
 
@@ -92,14 +92,14 @@
             </div>
         </section>
 
-        <section id="section-it" class="hidden">
+        <section id="section-leader" class="hidden">
             <div class="bg-white rounded-xl shadow-sm border border-purple-100 p-5">
                 <div class="flex justify-between items-center mb-4 border-b border-purple-100 pb-2">
                     <h3 class="font-bold text-purple-600"><i class="fas fa-mobile-alt mr-2"></i>手機繳交狀況</h3>
-                    <button id="btn-it-load" onclick="loadSubData('it')" class="bg-purple-50 text-purple-600 font-bold py-1.5 px-3 rounded-lg border border-purple-200 hover:bg-purple-100 text-sm">載入名單</button>
+                    <button id="btn-it-load" onclick="loadSubData('leader')" class="bg-purple-50 text-purple-600 font-bold py-1.5 px-3 rounded-lg border border-purple-200 hover:bg-purple-100 text-sm">載入名單</button>
                 </div>
                 <div id="it-list" class="mb-4 max-h-[50vh] overflow-y-auto"><p class="text-center text-gray-400 text-sm py-4">請載入班級名單</p></div>
-                <button id="btn-it-save" onclick="saveSubData('it')" class="hidden w-full bg-purple-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-purple-700 transition"><i class="fas fa-save mr-2"></i> 儲存手機繳交</button>
+                <button id="btn-it-save" onclick="saveSubData('leader')" class="hidden w-full bg-purple-600 text-white font-bold py-3 rounded-lg shadow-sm hover:bg-purple-700 transition"><i class="fas fa-save mr-2"></i> 儲存手機繳交</button>
             </div>
         </section>
 
@@ -157,7 +157,7 @@
             let defaultTab = 'common';
             if (cadreTitle.includes('學藝')) { document.getElementById('tab-academic').classList.remove('hidden'); defaultTab = 'academic'; }
             if (cadreTitle.includes('衛生')) { document.getElementById('tab-hygiene').classList.remove('hidden'); defaultTab = 'hygiene'; }
-            if (cadreTitle.includes('資訊')) { document.getElementById('tab-it').classList.remove('hidden'); defaultTab = 'it'; }
+            if (cadreTitle.includes('班長')) { document.getElementById('tab-leader').classList.remove('hidden'); defaultTab = 'it'; }
             if (cadreTitle.includes('風紀')) { document.getElementById('tab-discipline').classList.remove('hidden'); defaultTab = 'discipline'; fetchSchedule(); }
             
             switchTab(defaultTab);
