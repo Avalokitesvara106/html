@@ -93,6 +93,7 @@
                     <select id="leave-type" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none">
                         <option value="病假">病假</option>
                         <option value="事假">事假</option>
+                        <option value="公假">公假</option>
                         <option value="喪假">喪假</option>
                     </select>
                 </div>
@@ -137,7 +138,7 @@
         const stuId = sessionStorage.getItem('studentId');
         const stuName = sessionStorage.getItem('studentName');
         const stuClass = sessionStorage.getItem('studentClass');
-        const loginUsername = sessionStorage.getItem('username') || ''; // 🟢 抓取家長登入的帳號
+        const loginUsername = sessionStorage.getItem('username') || ''; 
 
         if (!isLoggedIn || userRole !== 'parent') { 
             alert('請先以家長身分登入！'); 
@@ -163,7 +164,7 @@
             fetchWeeklyReport();
         });
 
-        // 🟢 更改密碼邏輯
+        // 更改密碼邏輯
         function openChangePwdModal() {
             document.getElementById('self-old-pwd').value = '';
             document.getElementById('self-new-pwd').value = '';
@@ -203,6 +204,7 @@
             }
         }
 
+        // 送出請假單
         async function submitLeave() {
             const dateStr = document.getElementById('work-date').value;
             const leaveType = document.getElementById('leave-type').value;
