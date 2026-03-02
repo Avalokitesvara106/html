@@ -164,7 +164,6 @@
             fetchWeeklyReport();
         });
 
-        // 更改密碼邏輯
         function openChangePwdModal() {
             document.getElementById('self-old-pwd').value = '';
             document.getElementById('self-new-pwd').value = '';
@@ -204,7 +203,6 @@
             }
         }
 
-        // 送出請假單
         async function submitLeave() {
             const dateStr = document.getElementById('work-date').value;
             const leaveType = document.getElementById('leave-type').value;
@@ -315,21 +313,46 @@
                 attList.innerHTML = html || '<div class="py-4 text-center text-gray-400"><i class="fas fa-check-circle text-green-400 text-xl block mb-1"></i>今日出缺席皆正常</div>';
             }
 
-            // 3. 作業繳交
+            // 3. 作業繳交 (🟢 修復顯示邏輯，能正確顯示已交與自訂名稱狀態)
             const subList = document.getElementById('submission-list');
             if (data.submissions.length === 0) {
-                subList.innerHTML = '<div class="py-4 text-center text-gray-400"><i class="fas fa-clipboard-check text-green-400 text-xl block mb-1"></i>無欠交作業</div>';
+                subList.innerHTML = '<div class="py-4 text-center text-gray-400"><i class="fas fa-clipboard-check text-green-400 text-xl block mb-1"></i>今日無作業或繳交紀錄</div>';
             } else {
                 let html = '';
                 data.submissions.forEach(item => {
-                    let badge = '';
-                    if (item.status === 'missing') badge = '<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-bold border border-red-200">缺交</span>';
-                    else if (item.status === 'none') badge = '<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold border border-gray-200">未帶</span>';
-                    else if (item.status === 'leave') badge = '<span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-xs font-bold border border-blue-200">請假</span>';
-                    else badge = '<span class="bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded text-xs font-bold border border-yellow-200">未交</span>';
+                    let badgeText = '';
+                    let badgeColor = '';
                     
-                    let dateInfo = item.date !== document.getElementById('work-date').value ? `<div class="text-[10px] text-gray-400 mt-0.5">自 ${item.date} 欠交</div>` : '';
-                    html += `<div class="py-2.5 flex justify-between items-center"><div><span class="font-bold text-gray-700">${item.itemName}</span>${dateInfo}</div>${badge}</div>`;
+                    // 判斷是否為打掃
+                    let isHygiene = item.itemName.includes('打掃');
+
+                    // 精準配對每一種狀態
+                    if (item.status === 'done') {
+                        badgeText = isHygiene ? '乾淨' : '已交';
+                        badgeColor = 'bg-green-100 text-green-700 border-green-200';
+                    } else if (item.status === 'missing') {
+                        badgeText = isHygiene ? '未打掃' : '缺交';
+                        badgeColor = 'bg-red-100 text-red-600 border-red-200';
+                    } else if (item.status === 'none') {
+                        badgeText = '未帶';
+                        badgeColor = 'bg-gray-100 text-gray-600 border-gray-200';
+                    } else if (item.status === 'leave') {
+                        badgeText = '請假';
+                        badgeColor = 'bg-blue-100 text-blue-600 border-blue-200';
+                    } else { // pending
+                        badgeText = isHygiene ? '待加強' : '未交';
+                        badgeColor = 'bg-yellow-100 text-yellow-600 border-yellow-200';
+                    }
+
+                    let badge = `<span class="${badgeColor} px-2 py-0.5 rounded text-xs font-bold border">${badgeText}</span>`;
+                    
+                    // 跨日追討提示
+                    let dateInfo = item.date !== document.getElementById('work-date').value ? `<div class="text-[10px] text-red-500 bg-red-50 px-1 border border-red-100 rounded inline-block mt-1"><i class="fas fa-exclamation-circle mr-1"></i>自 ${item.date} 欠交</div>` : '';
+                    
+                    html += `<div class="py-2.5 flex justify-between items-center">
+                                <div><span class="font-bold text-gray-700 block">${item.itemName}</span>${dateInfo}</div>
+                                ${badge}
+                             </div>`;
                 });
                 subList.innerHTML = html;
             }
