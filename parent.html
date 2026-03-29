@@ -3,393 +3,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>家長專區 - 班級管理系統</title>
+    <title>家長 / 學生儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-50 font-sans pb-12">
+<body class="bg-gray-100 min-h-screen font-sans">
 
-    <header class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md rounded-b-3xl pb-6 relative z-10">
-        <div class="p-4 flex justify-between items-center">
-            <h1 class="text-lg font-bold"><i class="fas fa-user-friends mr-2"></i>家長專區</h1>
-            <div>
-                <button onclick="openChangePwdModal()" class="text-indigo-100 hover:text-white text-sm bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm transition mr-2"><i class="fas fa-key"></i> 密碼</button>
-                <button onclick="logout()" class="text-indigo-100 hover:text-white text-sm bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm transition"><i class="fas fa-sign-out-alt"></i> 登出</button>
-            </div>
-        </div>
-        <div class="px-6 flex items-center mt-2">
-            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-purple-600 text-3xl font-bold border-4 border-purple-300 shadow-sm">
-                <i class="fas fa-child"></i>
-            </div>
-            <div class="ml-4 flex-1">
-                <p class="text-indigo-100 text-sm mb-1"><span id="display-class" class="font-bold"></span></p>
-                <h2 class="text-2xl font-bold" id="display-name">載入中...</h2>
+    <header class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold"><i class="fas fa-user-graduate mr-2"></i>學生儀表板</h1>
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('change-pwd-modal').classList.remove('hidden')" class="text-indigo-200 hover:text-white text-sm transition"><i class="fas fa-key"></i> 密碼</button>
+                <button onclick="logout()" class="text-red-300 hover:text-white text-sm transition"><i class="fas fa-sign-out-alt"></i> 登出</button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-md mx-auto mt-6 px-4">
+    <main class="max-w-4xl mx-auto p-4 py-6">
         
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex justify-between items-center border border-gray-100 relative z-0">
-            <div class="flex items-center">
-                <i class="far fa-calendar-alt text-purple-500 mr-2 text-lg"></i>
-                <input type="date" id="work-date" class="bg-gray-50 border border-gray-300 text-gray-800 text-sm rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none font-bold">
+        <div class="bg-white rounded-xl shadow-sm p-5 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <p class="text-sm text-gray-500">歡迎回來</p>
+                <h2 class="text-2xl font-black text-indigo-800" id="student-name-display">載入中...</h2>
+                <p class="text-sm font-bold text-indigo-500 mt-1" id="student-class-display"></p>
             </div>
-            <button onclick="document.getElementById('leave-modal').classList.remove('hidden')" class="bg-purple-100 text-purple-700 font-bold px-3 py-2 rounded-lg hover:bg-purple-200 transition text-sm flex items-center shadow-sm">
-                <i class="fas fa-pen-alt mr-1"></i> 請假單
-            </button>
+            <div class="w-full sm:w-auto">
+                <label class="block text-xs font-bold text-gray-500 mb-1">查詢日期</label>
+                <input type="date" id="datePicker" onchange="loadAllData()" class="w-full sm:w-48 bg-gray-50 border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-gray-700">
+            </div>
         </div>
 
-        <div id="loading-msg" class="text-center text-purple-500 py-8">
-            <i class="fas fa-spinner fa-spin mr-2 text-2xl"></i><p class="mt-2 font-bold">為您整理今日報表中...</p>
+        <div id="announcement-section" class="bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 p-5 mb-6 hidden">
+            <h3 class="font-bold text-yellow-800 mb-2"><i class="fas fa-bullhorn mr-2"></i>導師聯絡簿 / 公告</h3>
+            <p id="announcement-content" class="text-sm text-gray-700 whitespace-pre-line"></p>
+            <div id="announcement-file" class="mt-3 text-sm"></div>
         </div>
 
-        <div id="report-content" class="hidden space-y-6">
-            
-            <div id="announcement-section"></div>
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <button onclick="switchTab('daily')" id="tab-daily" class="flex-1 min-w-[100px] py-2 text-center rounded-lg bg-indigo-600 text-white font-bold shadow transition"><i class="fas fa-calendar-day mr-1"></i> 今日概況</button>
+            <button onclick="switchTab('semester')" id="tab-semester" class="flex-1 min-w-[100px] py-2 text-center rounded-lg bg-white text-gray-500 hover:bg-gray-50 font-bold shadow-sm transition"><i class="fas fa-trophy mr-1"></i> 段考成績</button>
+            <button onclick="switchTab('leave')" id="tab-leave" class="flex-1 min-w-[100px] py-2 text-center rounded-lg bg-white text-gray-500 hover:bg-gray-50 font-bold shadow-sm transition"><i class="fas fa-notes-medical mr-1"></i> 請假申請</button>
+        </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="bg-blue-50 p-3 border-b border-blue-100 flex items-center">
-                    <i class="fas fa-user-check text-blue-500 mr-2"></i><h3 class="font-bold text-blue-800">今日出缺席</h3>
+        <div id="view-daily" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm border-t-4 border-red-500 p-5">
+                    <h3 class="font-bold text-red-600 border-b border-gray-100 pb-2 mb-3"><i class="fas fa-user-check mr-2"></i>今日出缺席</h3>
+                    <div id="attendance-list" class="space-y-3 text-sm"><div class="text-center text-gray-400 py-2"><i class="fas fa-spinner fa-spin mr-2"></i>載入中</div></div>
                 </div>
-                <div id="attendance-list" class="p-4 divide-y divide-gray-50 text-sm"></div>
-            </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="bg-yellow-50 p-3 border-b border-yellow-100 flex items-center">
-                    <i class="fas fa-clipboard-list text-yellow-600 mr-2"></i><h3 class="font-bold text-yellow-800">作業與物品繳交</h3>
+                <div class="bg-white rounded-xl shadow-sm border-t-4 border-yellow-500 p-5">
+                    <h3 class="font-bold text-yellow-600 border-b border-gray-100 pb-2 mb-3"><i class="fas fa-clipboard-list mr-2"></i>作業與聯絡簿</h3>
+                    <div id="submission-list" class="space-y-3 text-sm"><div class="text-center text-gray-400 py-2"><i class="fas fa-spinner fa-spin mr-2"></i>載入中</div></div>
                 </div>
-                <div id="submission-list" class="p-4 divide-y divide-gray-50 text-sm"></div>
-            </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="bg-green-50 p-3 border-b border-green-100 flex items-center">
-                    <i class="fas fa-marker text-green-600 mr-2"></i><h3 class="font-bold text-green-800">今日成績紀錄</h3>
+                <div class="bg-white rounded-xl shadow-sm border-t-4 border-green-500 p-5 md:col-span-2">
+                    <h3 class="font-bold text-green-600 border-b border-gray-100 pb-2 mb-3"><i class="fas fa-marker mr-2"></i>今日平時成績</h3>
+                    <div id="score-list" class="space-y-3 text-sm"><div class="text-center text-gray-400 py-2"><i class="fas fa-spinner fa-spin mr-2"></i>載入中</div></div>
                 </div>
-                <div id="score-list" class="p-4 divide-y divide-gray-50 text-sm"></div>
             </div>
+        </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden p-4 mb-6">
-                <h3 class="font-bold text-gray-700 mb-3 text-center"><i class="fas fa-chart-line text-indigo-500 mr-2"></i>近五日成績平均趨勢</h3>
-                <div class="relative h-48 w-full"><canvas id="scoreChart"></canvas></div>
+        <div id="view-semester" class="hidden space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-orange-500 overflow-hidden">
+                <div class="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-center">
+                    <h3 class="font-bold text-orange-800"><i class="fas fa-trophy mr-2"></i>歷次段考成績表現</h3>
+                    <button onclick="loadSemesterExams()" class="text-orange-600 hover:text-orange-800 text-sm font-bold bg-white px-3 py-1 rounded shadow-sm"><i class="fas fa-sync-alt mr-1"></i>重新整理</button>
+                </div>
+                <div class="p-4 bg-gray-50 min-h-[200px]">
+                    <div id="semester-list" class="space-y-6">
+                        <div class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>查詢成績中...</div>
+                    </div>
+                </div>
             </div>
+        </div>
 
+        <div id="view-leave" class="hidden space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-blue-500 p-6">
+                <h3 class="font-bold text-blue-800 mb-4"><i class="fas fa-notes-medical mr-2"></i>線上請假申請</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">假別</label>
+                        <select id="leave-type" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="病假">病假</option>
+                            <option value="事假">事假</option>
+                            <option value="喪假">喪假</option>
+                            <option value="公假">公假</option>
+                            <option value="早退">早退 (中途離校)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">事由與備註</label>
+                        <input type="text" id="leave-reason" placeholder="請簡述原因..." class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <button id="submit-leave-btn" onclick="submitLeave()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 transition">送出請假單</button>
+                </div>
+            </div>
         </div>
     </main>
 
-    <div id="leave-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
-            <div class="bg-purple-600 p-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fas fa-paper-plane mr-2"></i>線上請假單</h3>
-                <button onclick="document.getElementById('leave-modal').classList.add('hidden')" class="text-white hover:text-gray-200 outline-none"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="p-6">
-                <div class="bg-purple-50 p-3 rounded mb-4 text-xs text-purple-800 border border-purple-100">
-                    💡 請假申請送出後，系統將自動通知導師與風紀股長。
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">假別</label>
-                    <select id="leave-type" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none">
-                        <option value="病假">病假</option>
-                        <option value="事假">事假</option>
-                        <option value="公假">公假</option>
-                        <option value="喪假">喪假</option>
-                    </select>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">事由 / 備註</label>
-                    <input type="text" id="leave-reason" placeholder="例如：發燒、家中有事" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none">
-                </div>
-                <button id="btn-submit-leave" onclick="submitLeave()" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg shadow hover:bg-purple-700 transition">確認送出申請</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="change-pwd-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
-            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg"><i class="fas fa-user-lock mr-2"></i>更改家長密碼</h3>
-                <button onclick="document.getElementById('change-pwd-modal').classList.add('hidden')" class="text-white hover:text-gray-200 outline-none"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="p-6">
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">請輸入「舊」密碼</label>
-                    <input type="password" id="self-old-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="驗證您的身分">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">請輸入「新」密碼</label>
-                    <input type="password" id="self-new-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="支援 0 開頭">
-                </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">再次確認「新」密碼</label>
-                    <input type="password" id="self-new-pwd-confirm" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="請再輸入一次">
-                </div>
-                <button id="btn-submit-change-pwd" onclick="submitChangePassword()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg shadow hover:bg-indigo-700 transition">確認更改</button>
-            </div>
-        </div>
+    <div id="change-pwd-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"> 
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all"> 
+            <div class="bg-indigo-700 p-4 text-white flex justify-between items-center"><h3 class="font-bold text-lg"><i class="fas fa-user-lock mr-2"></i>更改密碼</h3><button onclick="document.getElementById('change-pwd-modal').classList.add('hidden')" class="text-white hover:text-gray-300 outline-none"><i class="fas fa-times text-xl"></i></button></div> 
+            <div class="p-6"> 
+                <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">舊密碼</label><input type="password" id="self-old-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"></div> 
+                <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">新密碼</label><input type="password" id="self-new-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"></div> 
+                <div class="mb-6"><label class="block text-sm font-bold text-gray-700 mb-1">再次確認新密碼</label><input type="password" id="self-new-pwd-confirm" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none"></div> 
+                <button id="btn-submit-change-pwd" onclick="submitChangePassword()" class="w-full bg-indigo-700 text-white font-bold py-3 rounded-lg shadow hover:bg-indigo-800 transition">確認更改</button> 
+            </div> 
+        </div> 
     </div>
 
     <script>
+        // ⚠️ 請填寫你最新部署的 Google Apps Script Web App URL
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
-        
-        const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-        const userRole = sessionStorage.getItem('userRole');
-        const stuId = sessionStorage.getItem('studentId');
-        const stuName = sessionStorage.getItem('studentName');
-        const stuClass = sessionStorage.getItem('studentClass');
-        const loginUsername = sessionStorage.getItem('username') || ''; 
 
-        if (!isLoggedIn || userRole !== 'parent') { 
-            alert('請先以家長身分登入！'); 
-            window.location.href = 'login.html'; 
+        // 權限驗證
+        if (!sessionStorage.getItem('isLoggedIn') || (sessionStorage.getItem('userRole') !== 'parent' && sessionStorage.getItem('userRole') !== 'student' && sessionStorage.getItem('userRole') !== 'cadre')) { 
+            alert('請先登入！'); window.location.href = 'login.html'; 
         }
 
-        let myChart = null;
+        const studentId = sessionStorage.getItem('studentId');
+        const studentName = sessionStorage.getItem('studentName');
+        const studentClass = sessionStorage.getItem('studentClass');
+        const loginUsername = sessionStorage.getItem('username');
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('display-name').innerText = stuName;
-            document.getElementById('display-class').innerText = `${stuClass}班 | 學號: ${stuId}`;
-            
-            const dateInput = document.getElementById('work-date');
-            const today = new Date(); 
-            dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            
-            dateInput.addEventListener('change', () => { 
-                fetchDailyReport(); 
-                fetchWeeklyReport(); 
-            });
-            
-            fetchDailyReport();
-            fetchWeeklyReport();
+            document.getElementById('student-name-display').innerText = studentName;
+            document.getElementById('student-class-display').innerText = `${studentClass}班 - 學號: ${studentId}`;
+            document.getElementById('datePicker').valueAsDate = new Date();
+            loadAllData();
         });
 
-        function openChangePwdModal() {
-            document.getElementById('self-old-pwd').value = '';
-            document.getElementById('self-new-pwd').value = '';
-            document.getElementById('self-new-pwd-confirm').value = '';
-            document.getElementById('change-pwd-modal').classList.remove('hidden');
+        // ==========================================
+        // 頁籤切換邏輯
+        // ==========================================
+        function switchTab(tabName) {
+            ['daily', 'semester', 'leave'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                let btn = document.getElementById(`tab-${t}`);
+                btn.className = "flex-1 min-w-[100px] py-2 text-center rounded-lg bg-white text-gray-500 hover:bg-gray-50 font-bold shadow-sm transition";
+            });
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            let activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.className = "flex-1 min-w-[100px] py-2 text-center rounded-lg bg-indigo-600 text-white font-bold shadow transition";
+
+            if (tabName === 'semester' && document.getElementById('semester-list').innerHTML.includes('查詢成績中')) {
+                loadSemesterExams();
+            }
         }
 
+        function loadAllData() {
+            loadDailyData();
+            if(!document.getElementById('view-semester').classList.contains('hidden')) {
+                loadSemesterExams();
+            }
+        }
+
+        // ==========================================
+        // API：讀取今日概況 (含請假狀態、公告)
+        // ==========================================
+        async function loadDailyData() {
+            const date = document.getElementById('datePicker').value;
+            ['attendance-list', 'submission-list', 'score-list'].forEach(id => {
+                document.getElementById(id).innerHTML = '<div class="text-center text-gray-400 py-2"><i class="fas fa-spinner fa-spin mr-2"></i>載入中</div>';
+            });
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getDailyReport', studentId: studentId, date: date })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 1. 公告與請假提示
+                    const annSec = document.getElementById('announcement-section');
+                    if (result.leave) {
+                        annSec.classList.remove('hidden');
+                        annSec.className = 'bg-blue-50 rounded-xl shadow-sm border border-blue-200 p-5 mb-6';
+                        document.getElementById('announcement-content').innerHTML = `<div class="font-bold text-blue-800"><i class="fas fa-info-circle mr-2"></i>今日已請假 (${result.leave.type})</div><div class="text-sm text-blue-600 mt-1">事由：${result.leave.reason}</div>`;
+                        document.getElementById('announcement-file').innerHTML = '';
+                    } else if (result.announcement) {
+                        annSec.classList.remove('hidden');
+                        annSec.className = 'bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 p-5 mb-6';
+                        document.getElementById('announcement-content').innerText = result.announcement.content || '今日無文字公告';
+                        if (result.announcement.fileUrl) {
+                            document.getElementById('announcement-file').innerHTML = `<a href="${result.announcement.fileUrl}" target="_blank" class="text-indigo-600 font-bold hover:underline"><i class="fas fa-paperclip mr-1"></i>查看附加檔案</a>`;
+                        } else {
+                            document.getElementById('announcement-file').innerHTML = '';
+                        }
+                    } else {
+                        annSec.classList.add('hidden');
+                    }
+
+                    // 2. 出缺席
+                    let attHtml = '';
+                    if (result.attendance.length === 0) attHtml = '<div class="text-gray-400">目前尚無出缺席紀錄</div>';
+                    else {
+                        result.attendance.forEach(a => {
+                            let badge = a.attendance === 'present' ? '<span class="text-green-600 font-bold">✅ 正常</span>' : 
+                                        (a.attendance === 'late' ? '<span class="text-yellow-600 font-bold">⚠️ 遲到</span>' : 
+                                        (a.attendance === 'leave' ? '<span class="text-blue-600 font-bold">🛌 請假</span>' : '<span class="text-red-600 font-bold">❌ 缺席</span>'));
+                            let cmt = a.comment ? `<div class="text-xs text-indigo-600 bg-indigo-50 mt-1 p-1 rounded border border-indigo-100">${a.comment.replace('[❗通報]', '⚠️')}</div>` : '';
+                            attHtml += `<div class="flex justify-between items-center border-b border-gray-50 pb-2 mb-2 last:border-0 last:mb-0 last:pb-0"><div><div class="font-bold text-gray-700">${a.course}</div>${cmt}</div>${badge}</div>`;
+                        });
+                    }
+                    document.getElementById('attendance-list').innerHTML = attHtml;
+
+                    // 3. 作業
+                    let subHtml = '';
+                    if (result.submissions.length === 0) subHtml = '<div class="text-gray-400">✅ 尚無缺交作業</div>';
+                    else {
+                        result.submissions.forEach(s => {
+                            let badge = s.status === 'done' ? '<span class="text-green-600 font-bold text-xs bg-green-50 px-2 py-1 rounded">已交</span>' : 
+                                        (s.status === 'missing' ? '<span class="text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded">缺交</span>' : 
+                                        '<span class="text-yellow-600 font-bold text-xs bg-yellow-50 px-2 py-1 rounded">未交</span>');
+                            let dateTag = s.date !== date ? `<span class="text-[10px] text-gray-400 ml-1">(${s.date})</span>` : '';
+                            subHtml += `<div class="flex justify-between items-center border-b border-gray-50 pb-2 mb-2 last:border-0 last:mb-0 last:pb-0"><div class="font-bold text-gray-700">${s.itemName}${dateTag}</div>${badge}</div>`;
+                        });
+                    }
+                    document.getElementById('submission-list').innerHTML = subHtml;
+
+                    // 4. 成績
+                    let scoreHtml = '';
+                    if (result.scores.length === 0) scoreHtml = '<div class="text-gray-400">今日無成績紀錄</div>';
+                    else {
+                        result.scores.forEach(s => {
+                            let isFail = !isNaN(s.score) && parseFloat(s.score) < 60;
+                            let scoreClass = isFail ? 'text-red-600 font-black' : 'text-green-700 font-bold';
+                            scoreHtml += `<div class="flex justify-between items-center border-b border-gray-50 pb-2 mb-2 last:border-0 last:mb-0 last:pb-0"><div><span class="text-xs text-gray-400 mr-2">${s.course}</span><span class="font-bold text-gray-700">${s.examName}</span></div><div class="${scoreClass} text-lg bg-gray-50 px-3 py-0.5 rounded shadow-sm">${s.score}</div></div>`;
+                        });
+                    }
+                    document.getElementById('score-list').innerHTML = scoreHtml;
+
+                } else {
+                    alert('讀取失敗：' + result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('attendance-list').innerHTML = '<div class="text-red-500 text-center">連線異常</div>';
+            }
+        }
+
+        // ==========================================
+        // 🏆 API：讀取段考成績 (呼叫最新後端邏輯)
+        // ==========================================
+        async function loadSemesterExams() {
+            const listContainer = document.getElementById('semester-list');
+            listContainer.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>查詢成績中...</div>';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getStudentSemesterExams', studentId: studentId })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.data.length === 0) {
+                        listContainer.innerHTML = `
+                            <div class="text-center py-10 text-gray-400 bg-white rounded-xl border border-gray-100 shadow-sm">
+                                <i class="fas fa-eye-slash text-4xl mb-3 text-gray-300 block"></i>
+                                <span class="font-bold">目前無已發布的段考成績</span><br>
+                                <span class="text-xs mt-1">(導師尚未開放查閱權限)</span>
+                            </div>`;
+                        return;
+                    }
+                    
+                    let html = '';
+                    result.data.forEach(exam => {
+                        html += `
+                        <div class="bg-white border border-orange-100 rounded-xl overflow-hidden shadow-sm">
+                            <div class="bg-gradient-to-r from-orange-500 to-orange-400 text-white p-3 font-bold text-center shadow-sm">${exam.examName}</div>
+                            
+                            <div class="grid grid-cols-5 text-center divide-x divide-gray-100 border-b border-gray-100">
+                                <div class="py-3 bg-gray-50/50"><div class="text-xs text-gray-500 font-bold mb-1">國文</div><div class="font-black text-gray-800 text-lg">${exam.scores.chi}</div></div>
+                                <div class="py-3 bg-gray-50/50"><div class="text-xs text-gray-500 font-bold mb-1">英文</div><div class="font-black text-gray-800 text-lg">${exam.scores.eng}</div></div>
+                                <div class="py-3 bg-gray-50/50"><div class="text-xs text-gray-500 font-bold mb-1">數學</div><div class="font-black text-gray-800 text-lg">${exam.scores.math}</div></div>
+                                <div class="py-3 bg-gray-50/50"><div class="text-xs text-gray-500 font-bold mb-1">社會</div><div class="font-black text-gray-800 text-lg">${exam.scores.soc}</div></div>
+                                <div class="py-3 bg-gray-50/50"><div class="text-xs text-gray-500 font-bold mb-1">自然</div><div class="font-black text-gray-800 text-lg">${exam.scores.sci}</div></div>
+                            </div>
+                            
+                            <div class="bg-orange-50/80 p-4 flex justify-around text-sm">
+                                <div class="text-center"><span class="text-gray-500 text-xs font-bold block mb-1">加權總分</span><span class="font-black text-blue-700 text-xl">${exam.wTotal}</span></div>
+                                <div class="text-center"><span class="text-gray-500 text-xs font-bold block mb-1">加權平均</span><span class="font-black text-blue-700 text-xl">${exam.wAvg}</span></div>
+                                <div class="text-center"><span class="text-gray-500 text-xs font-bold block mb-1">班級排名</span><span class="font-black text-orange-600 text-xl">${exam.rank}</span></div>
+                            </div>
+                        </div>`;
+                    });
+                    listContainer.innerHTML = html;
+                } else {
+                    listContainer.innerHTML = `<div class="text-red-500 text-center py-8 font-bold">讀取失敗：${result.message}</div>`;
+                }
+            } catch (e) {
+                listContainer.innerHTML = '<div class="text-red-500 text-center py-8 font-bold">網路連線異常</div>';
+            }
+        }
+
+        // ==========================================
+        // API：送出請假申請
+        // ==========================================
+        async function submitLeave() {
+            const dateStr = document.getElementById('datePicker').value;
+            const leaveType = document.getElementById('leave-type').value;
+            const reason = document.getElementById('leave-reason').value.trim();
+            const btn = document.getElementById('submit-leave-btn');
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>送出中...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'submitLeave', 
+                        date: dateStr, 
+                        stuClass: studentClass, 
+                        stuId: studentId, 
+                        stuName: studentName, 
+                        leaveType: leaveType, 
+                        reason: reason 
+                    })
+                });
+                const result = await res.json();
+                alert(result.message);
+                if (result.success) {
+                    document.getElementById('leave-reason').value = '';
+                    switchTab('daily');
+                    loadDailyData();
+                }
+            } catch (e) {
+                alert('連線異常');
+            } finally {
+                btn.innerHTML = '送出請假單';
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // API：更改密碼
+        // ==========================================
         async function submitChangePassword() {
             const oldPwd = document.getElementById('self-old-pwd').value;
             const newPwd = document.getElementById('self-new-pwd').value;
             const confirmPwd = document.getElementById('self-new-pwd-confirm').value;
-
             if (!oldPwd || !newPwd || !confirmPwd) return alert("所有欄位皆必填！");
             if (newPwd !== confirmPwd) return alert("兩次輸入的新密碼不一致！");
             if (newPwd.length < 4) return alert("新密碼長度至少需要 4 碼！");
-            if (!loginUsername) return alert("登入狀態異常，無法更改密碼。");
 
             const btn = document.getElementById('btn-submit-change-pwd');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...';
             btn.disabled = true;
 
             try {
-                const response = await fetch(API_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'changeUserPassword', username: loginUsername, oldPassword: oldPwd, newPassword: newPwd }) 
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'changeUserPassword', username: loginUsername, oldPassword: oldPwd, newPassword: newPwd })
                 });
                 const result = await response.json();
                 alert(result.message);
-                if (result.success) {
-                    document.getElementById('change-pwd-modal').classList.add('hidden');
-                }
+                if (result.success) document.getElementById('change-pwd-modal').classList.add('hidden');
             } catch(e) {
                 alert("網路連線異常，請稍後再試。");
             } finally {
                 btn.innerHTML = '確認更改';
                 btn.disabled = false;
             }
-        }
-
-        async function submitLeave() {
-            const dateStr = document.getElementById('work-date').value;
-            const leaveType = document.getElementById('leave-type').value;
-            const reason = document.getElementById('leave-reason').value.trim();
-            const btn = document.getElementById('btn-submit-leave');
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>傳送中...'; 
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch(API_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'submitLeave', date: dateStr, stuClass: stuClass, stuId: stuId, stuName: stuName, leaveType: leaveType, reason: reason }) 
-                });
-                const result = await response.json();
-                if (result.success) {
-                    alert('✅ 假單已成功送出！');
-                    document.getElementById('leave-modal').classList.add('hidden');
-                    document.getElementById('leave-reason').value = '';
-                    fetchDailyReport(); // 重整畫面
-                } else {
-                    alert('送出失敗：' + result.message);
-                }
-            } catch (e) {
-                alert('網路連線異常');
-            } finally {
-                btn.innerHTML = '確認送出申請'; 
-                btn.disabled = false;
-            }
-        }
-
-        async function fetchDailyReport() {
-            const date = document.getElementById('work-date').value;
-            const loadingMsg = document.getElementById('loading-msg');
-            const content = document.getElementById('report-content');
-            
-            loadingMsg.classList.remove('hidden');
-            content.classList.add('hidden');
-            
-            try {
-                const response = await fetch(API_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: 'getDailyReport', studentId: stuId, date: date }) 
-                });
-                const result = await response.json();
-                if (result.success) {
-                    renderReport(result);
-                    content.classList.remove('hidden');
-                } else {
-                    alert('資料獲取失敗：' + result.message);
-                }
-            } catch (e) {
-                alert('網路連線異常，無法讀取今日報表。');
-            } finally {
-                loadingMsg.classList.add('hidden');
-            }
-        }
-
-        function renderReport(data) {
-            // 1. 渲染聯絡簿
-            const annSection = document.getElementById('announcement-section');
-            if (data.announcement && (data.announcement.content || data.announcement.fileUrl)) {
-                let attachmentHtml = '';
-                if (data.announcement.fileUrl) {
-                    let fileIdMatch = data.announcement.fileUrl.match(/[-\w]{25,}/);
-                    let fileId = fileIdMatch ? fileIdMatch[0] : '';
-                    let imgTag = fileId ? `<div class="mt-3 text-center"><img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w800" class="max-w-full rounded-lg shadow-sm border border-purple-200 mx-auto" onerror="this.style.display='none';"></div>` : '';
-                    
-                    attachmentHtml = `
-                        <div class="mt-2 pt-3 border-t border-purple-100">
-                            <p class="text-sm font-bold text-purple-800 mb-2"><i class="fas fa-paperclip mr-1"></i>黑板/附件：<a href="${data.announcement.fileUrl}" target="_blank" class="text-blue-600 underline hover:text-blue-800">點此開啟</a></p>
-                            ${imgTag}
-                        </div>`;
-                }
-                
-                annSection.innerHTML = `
-                    <div class="bg-white rounded-xl shadow-sm border-t-4 border-purple-500 p-5 mb-6">
-                        <h4 class="font-bold text-purple-700 mb-3 flex items-center border-b border-gray-100 pb-2"><i class="fas fa-bullhorn mr-2"></i>今日班級聯絡簿</h4>
-                        <p class="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed mb-3">${data.announcement.content}</p>
-                        ${attachmentHtml}
-                    </div>`;
-            } else {
-                annSection.innerHTML = `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6 text-center text-gray-400">
-                        <i class="fas fa-comment-slash text-2xl mb-2 text-gray-300 block"></i>導師尚無發布聯絡簿
-                    </div>`;
-            }
-
-            // 2. 出缺席與請假
-            const attList = document.getElementById('attendance-list');
-            if (data.leave) {
-                attList.innerHTML = `
-                    <div class="py-4 text-center">
-                        <div class="inline-block bg-blue-50 text-blue-600 px-4 py-2 rounded-lg border border-blue-200">
-                            <span class="font-bold block mb-1 text-base"><i class="fas fa-bed mr-2"></i>今日已請假 (${data.leave.type})</span>
-                            <span class="text-xs text-gray-500 block">事由：${data.leave.reason}</span>
-                        </div>
-                    </div>`;
-            } else if (data.attendance.length === 0) {
-                attList.innerHTML = '<div class="py-4 text-center text-gray-400"><i class="fas fa-check-circle text-green-400 text-xl block mb-1"></i>今日出缺席皆正常</div>';
-            } else {
-                let html = '';
-                data.attendance.forEach(item => {
-                    if (item.attendance === 'present') return; 
-                    let badge = item.attendance === 'absent' ? '<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-bold border border-red-200">缺席</span>' : '<span class="bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded text-xs font-bold border border-yellow-200">遲到</span>';
-                    html += `<div class="py-2.5 flex justify-between items-center"><span class="font-bold text-gray-700">${item.course}</span><div class="flex items-center gap-2">${item.comment ? '<span class="text-xs text-gray-400">'+item.comment+'</span>':''}${badge}</div></div>`;
-                });
-                attList.innerHTML = html || '<div class="py-4 text-center text-gray-400"><i class="fas fa-check-circle text-green-400 text-xl block mb-1"></i>今日出缺席皆正常</div>';
-            }
-
-            // 3. 作業繳交 (🟢 修復顯示邏輯，能正確顯示已交與自訂名稱狀態)
-            const subList = document.getElementById('submission-list');
-            if (data.submissions.length === 0) {
-                subList.innerHTML = '<div class="py-4 text-center text-gray-400"><i class="fas fa-clipboard-check text-green-400 text-xl block mb-1"></i>今日無作業或繳交紀錄</div>';
-            } else {
-                let html = '';
-                data.submissions.forEach(item => {
-                    let badgeText = '';
-                    let badgeColor = '';
-                    
-                    // 判斷是否為打掃
-                    let isHygiene = item.itemName.includes('打掃');
-
-                    // 精準配對每一種狀態
-                    if (item.status === 'done') {
-                        badgeText = isHygiene ? '乾淨' : '已交';
-                        badgeColor = 'bg-green-100 text-green-700 border-green-200';
-                    } else if (item.status === 'missing') {
-                        badgeText = isHygiene ? '未打掃' : '缺交';
-                        badgeColor = 'bg-red-100 text-red-600 border-red-200';
-                    } else if (item.status === 'none') {
-                        badgeText = '未帶';
-                        badgeColor = 'bg-gray-100 text-gray-600 border-gray-200';
-                    } else if (item.status === 'leave') {
-                        badgeText = '請假';
-                        badgeColor = 'bg-blue-100 text-blue-600 border-blue-200';
-                    } else { // pending
-                        badgeText = isHygiene ? '待加強' : '未交';
-                        badgeColor = 'bg-yellow-100 text-yellow-600 border-yellow-200';
-                    }
-
-                    let badge = `<span class="${badgeColor} px-2 py-0.5 rounded text-xs font-bold border">${badgeText}</span>`;
-                    
-                    // 跨日追討提示
-                    let dateInfo = item.date !== document.getElementById('work-date').value ? `<div class="text-[10px] text-red-500 bg-red-50 px-1 border border-red-100 rounded inline-block mt-1"><i class="fas fa-exclamation-circle mr-1"></i>自 ${item.date} 欠交</div>` : '';
-                    
-                    html += `<div class="py-2.5 flex justify-between items-center">
-                                <div><span class="font-bold text-gray-700 block">${item.itemName}</span>${dateInfo}</div>
-                                ${badge}
-                             </div>`;
-                });
-                subList.innerHTML = html;
-            }
-
-            // 4. 考試成績
-            const scoreList = document.getElementById('score-list');
-            if (data.scores.length === 0) {
-                scoreList.innerHTML = '<div class="py-4 text-center text-gray-400"><i class="fas fa-file-signature text-gray-300 text-xl block mb-1"></i>今日無登記成績</div>';
-            } else {
-                let html = '';
-                data.scores.forEach(item => {
-                    let sColor = 'text-gray-700';
-                    let sVal = parseFloat(item.score);
-                    if(!isNaN(sVal)) { if(sVal<60) sColor='text-red-500 font-bold'; else if(sVal>=90) sColor='text-green-600 font-bold'; }
-                    html += `<div class="py-2.5 flex flex-col"><div class="flex justify-between items-center"><span class="font-bold text-gray-700">${item.course}</span><span class="${sColor}">${item.score} 分</span></div><span class="text-xs text-gray-500 mt-1">${item.examName}</span></div>`;
-                });
-                scoreList.innerHTML = html;
-            }
-        }
-
-        async function fetchWeeklyReport() {
-            const date = document.getElementById('work-date').value;
-            try {
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getWeeklyReport', studentId: stuId, date: date }) });
-                const result = await response.json();
-                if (result.success) renderChart(result.labels, result.data);
-            } catch (e) { console.error('無法載入成績趨勢圖'); }
-        }
-
-        function renderChart(labels, data) {
-            const ctx = document.getElementById('scoreChart').getContext('2d');
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: labels, datasets: [{ label: '日平均成績', data: data, borderColor: 'rgb(99, 102, 241)', backgroundColor: 'rgba(99, 102, 241, 0.1)', borderWidth: 2, pointBackgroundColor: 'rgb(99, 102, 241)', pointRadius: 4, fill: true, tension: 0.3, spanGaps: true }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, ticks: { stepSize: 20 } }, x: { grid: { display: false } } } }
-            });
         }
 
         function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
