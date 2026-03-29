@@ -97,3 +97,204 @@
                 </div>
                 
                 <div id="batch-assign-container" class="hidden bg-indigo-50 p-4 border-b border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                </div> 
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="data-table">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700 border-b border-gray-200" id="table-header">
+                                </tr>
+                        </thead>
+                        <tbody id="data-list" class="divide-y divide-gray-100">
+                            <tr><td colspan="10" class="text-center py-8 text-gray-500">請選擇條件並點擊「載入資料」</td></tr>
+                        </tbody>
+                        <tfoot id="table-footer" class="bg-blue-50 font-bold hidden">
+                            </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="save-container" class="mt-6 flex justify-end hidden">
+                <button id="save-btn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700 transition"><i class="fas fa-save mr-2"></i>儲存段考成績</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --------------------------------------------------------
+        // 段考成績專屬邏輯與權重設定
+        // --------------------------------------------------------
+        const API_URL = '你的_Web_App_URL'; // ⚠️ 請填入你部署的後端網址
+        let currentExamData = []; 
+        
+        const EXAM_SUBJECTS = [
+            { id: 'chi', name: '國文', weight: 5 },
+            { id: 'eng', name: '英文', weight: 3 },
+            { id: 'math', name: '數學', weight: 4 },
+            { id: 'soc', name: '社會', weight: 3 },
+            { id: 'sci', name: '自然', weight: 3 }
+        ];
+        const TOTAL_WEIGHT = 18; // 5+3+4+3+3
+
+        // 1. 切換模式邏輯 (對應你的 switchMode)
+        function switchMode(mode) {
+            // ... 隱藏其他元素的邏輯 ...
+            if (mode === 'exam') {
+                document.getElementById('subjectContainer').classList.add('hidden');
+                document.getElementById('examNameContainer').classList.add('hidden');
+                document.getElementById('semesterExamContainer').classList.remove('hidden');
+                document.getElementById('import-exam-btn').classList.remove('hidden');
+            }
+        }
+
+        // 2. 載入段考資料
+        async function loadSemesterExams() {
+            const className = document.getElementById('classSelect').value;
+            const examName = document.getElementById('semesterExamSelect').value;
+            
+            document.getElementById('data-list').innerHTML = `<tr><td colspan="10" class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>載入中...</td></tr>`;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'loadSemesterExams', className, examName })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentExamData = result.data;
+                    renderExamTable();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('連線失敗：' + error);
+            }
+        }
+
+        // 3. 計算總分、平均與排名，並渲染表格
+        function renderExamTable() {
+            const thead = document.getElementById('table-header');
+            const tbody = document.getElementById('data-list');
+            const tfoot = document.getElementById('table-footer');
+            
+            // 設定表頭
+            thead.innerHTML = `
+                <th class="p-3">學號</th>
+                <th class="p-3">姓名</th>
+                ${EXAM_SUBJECTS.map(sub => `<th class="p-3">${sub.name}<br><span class="text-xs text-gray-500">(權重${sub.weight})</span></th>`).join('')}
+                <th class="p-3 text-blue-600">加權總分</th>
+                <th class="p-3 text-blue-600">加權平均</th>
+                <th class="p-3 text-orange-600">班排</th>
+            `;
+
+            // 進行加權計算與排名
+            let processedData = currentExamData.map(student => {
+                let weightedTotal = 0;
+                let hasData = false;
+
+                EXAM_SUBJECTS.forEach(sub => {
+                    let score = parseFloat(student.scores[sub.id]);
+                    if (!isNaN(score)) {
+                        weightedTotal += score * sub.weight;
+                        hasData = true;
+                    }
+                });
+
+                let weightedAvg = hasData ? (weightedTotal / TOTAL_WEIGHT).toFixed(2) : "--";
+                
+                return { 
+                    ...student, 
+                    weightedTotal: hasData ? weightedTotal : "--", 
+                    weightedAvg: parseFloat(weightedAvg) || "--" 
+                };
+            });
+
+            // 計算排名 (僅對有成績的人排序)
+            let rankedStudents = [...processedData].filter(s => s.weightedAvg !== "--").sort((a, b) => b.weightedAvg - a.weightedAvg);
+            
+            let currentRank = 1;
+            rankedStudents.forEach((student, index) => {
+                if (index > 0 && student.weightedAvg === rankedStudents[index - 1].weightedAvg) {
+                    student.rank = rankedStudents[index - 1].rank;
+                } else {
+                    student.rank = currentRank;
+                }
+                currentRank++;
+                // 將排名寫回原陣列
+                processedData.find(s => s.studentId === student.studentId).rank = student.rank;
+            });
+
+            // 渲染表格內容
+            let trs = "";
+            let subjectSums = { chi: 0, eng: 0, math: 0, soc: 0, sci: 0 };
+            let subjectCounts = { chi: 0, eng: 0, math: 0, soc: 0, sci: 0 };
+
+            processedData.forEach((student, idx) => {
+                trs += `<tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="p-3 text-gray-600">${student.studentId}</td>
+                    <td class="p-3 font-bold">${student.name}</td>`;
+                
+                EXAM_SUBJECTS.forEach(sub => {
+                    let scoreVal = student.scores[sub.id] !== "" ? student.scores[sub.id] : "";
+                    if (scoreVal !== "") {
+                        subjectSums[sub.id] += parseFloat(scoreVal);
+                        subjectCounts[sub.id]++;
+                    }
+                    // 輸入框綁定 onchange 事件即時更新 currentExamData
+                    trs += `<td class="p-3"><input type="number" min="0" max="100" class="w-16 border rounded p-1 text-center exam-input" 
+                            data-idx="${idx}" data-subject="${sub.id}" value="${scoreVal}" onchange="updateScore(this)"></td>`;
+                });
+
+                trs += `<td class="p-3 font-bold text-blue-600">${student.weightedTotal}</td>
+                        <td class="p-3 font-bold text-blue-600">${student.weightedAvg}</td>
+                        <td class="p-3 font-bold text-orange-600">${student.rank || "--"}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = trs;
+
+            // 計算並渲染各科班級平均
+            let tfootHtml = `<tr class="bg-blue-100 text-blue-800"><td colspan="2" class="p-3 text-right">班級單科平均：</td>`;
+            EXAM_SUBJECTS.forEach(sub => {
+                let avg = subjectCounts[sub.id] > 0 ? (subjectSums[sub.id] / subjectCounts[sub.id]).toFixed(1) : "--";
+                tfootHtml += `<td class="p-3">${avg}</td>`;
+            });
+            tfootHtml += `<td colspan="3"></td></tr>`;
+            tfoot.innerHTML = tfootHtml;
+            tfoot.classList.remove('hidden');
+            
+            document.getElementById('save-container').classList.remove('hidden');
+        }
+
+        // 4. 即時更新成績並重新渲染
+        function updateScore(inputElement) {
+            const idx = inputElement.getAttribute('data-idx');
+            const subject = inputElement.getAttribute('data-subject');
+            currentExamData[idx].scores[subject] = inputElement.value;
+            // 重新渲染以更新平均與排名
+            renderExamTable(); 
+        }
+
+        // 5. 儲存成績到後端
+        document.getElementById('save-btn').addEventListener('click', async () => {
+            const className = document.getElementById('classSelect').value;
+            const examName = document.getElementById('semesterExamSelect').value;
+            
+            document.getElementById('save-btn').innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...`;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'saveSemesterExams', className, examName, records: currentExamData })
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert('儲存失敗：' + error);
+            } finally {
+                document.getElementById('save-btn').innerHTML = `<i class="fas fa-save mr-2"></i>儲存段考成績`;
+            }
+        });
+    </script>
+</body>
+</html>    
