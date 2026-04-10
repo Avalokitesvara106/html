@@ -6,7 +6,6 @@
     <title>家長 / 學生儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
 
@@ -163,7 +162,7 @@
         }
 
         // ==========================================
-        // API：讀取今日概況 (含請假狀態、公告)
+        // API：讀取今日概況
         // ==========================================
         async function loadDailyData() {
             const date = document.getElementById('datePicker').value;
@@ -179,7 +178,6 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // 1. 公告與請假提示
                     const annSec = document.getElementById('announcement-section');
                     if (result.leave) {
                         annSec.classList.remove('hidden');
@@ -199,7 +197,6 @@
                         annSec.classList.add('hidden');
                     }
 
-                    // 2. 出缺席
                     let attHtml = '';
                     if (result.attendance.length === 0) attHtml = '<div class="text-gray-400">目前尚無出缺席紀錄</div>';
                     else {
@@ -213,7 +210,6 @@
                     }
                     document.getElementById('attendance-list').innerHTML = attHtml;
 
-                    // 3. 作業
                     let subHtml = '';
                     if (result.submissions.length === 0) subHtml = '<div class="text-gray-400">✅ 尚無缺交作業</div>';
                     else {
@@ -227,7 +223,6 @@
                     }
                     document.getElementById('submission-list').innerHTML = subHtml;
 
-                    // 4. 成績
                     let scoreHtml = '';
                     if (result.scores.length === 0) scoreHtml = '<div class="text-gray-400">今日無成績紀錄</div>';
                     else {
@@ -249,7 +244,7 @@
         }
 
         // ==========================================
-        // 🏆 API：讀取段考成績 (呼叫最新後端邏輯)
+        // 🏆 API：讀取段考成績 (含新增的校排顯示)
         // ==========================================
         async function loadSemesterExams() {
             const listContainer = document.getElementById('semester-list');
@@ -287,10 +282,11 @@
                                 <div class="py-3 bg-gray-50/50"><div class="text-xs text-gray-500 font-bold mb-1">自然</div><div class="font-black text-gray-800 text-lg">${exam.scores.sci}</div></div>
                             </div>
                             
-                            <div class="bg-orange-50/80 p-4 flex justify-around text-sm">
-                                <div class="text-center"><span class="text-gray-500 text-xs font-bold block mb-1">加權總分</span><span class="font-black text-blue-700 text-xl">${exam.wTotal}</span></div>
-                                <div class="text-center"><span class="text-gray-500 text-xs font-bold block mb-1">加權平均</span><span class="font-black text-blue-700 text-xl">${exam.wAvg}</span></div>
-                                <div class="text-center"><span class="text-gray-500 text-xs font-bold block mb-1">班級排名</span><span class="font-black text-orange-600 text-xl">${exam.rank}</span></div>
+                            <div class="bg-orange-50/80 p-4 flex flex-wrap justify-between text-sm">
+                                <div class="text-center flex-1 min-w-[20%]"><span class="text-gray-500 text-xs font-bold block mb-1">加權總分</span><span class="font-black text-blue-700 text-xl">${exam.wTotal}</span></div>
+                                <div class="text-center flex-1 min-w-[20%] border-l border-orange-200"><span class="text-gray-500 text-xs font-bold block mb-1">加權平均</span><span class="font-black text-blue-700 text-xl">${exam.wAvg}</span></div>
+                                <div class="text-center flex-1 min-w-[20%] border-l border-orange-200"><span class="text-gray-500 text-xs font-bold block mb-1">班級排名</span><span class="font-black text-orange-600 text-xl">${exam.rank}</span></div>
+                                <div class="text-center flex-1 min-w-[20%] border-l border-orange-200"><span class="text-gray-500 text-xs font-bold block mb-1">校排</span><span class="font-black text-purple-600 text-xl">${exam.sRank || '--'}</span></div>
                             </div>
                         </div>`;
                     });
