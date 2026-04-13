@@ -47,6 +47,7 @@
                 <button id="tab-semester" onclick="switchMode('semester')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-trophy text-orange-500 mr-1"></i> 段考成績</button>
                 <button id="tab-homeroom" onclick="switchMode('homeroom')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-chart-pie text-yellow-500 mr-1"></i> 導師儀表板</button>
                 <button id="tab-weekly" onclick="switchMode('weekly')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-calendar-check text-green-500 mr-1"></i> 週考成績</button>
+                <button id="tab-att-summary" onclick="switchMode('att-summary')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-clock text-red-500 mr-1"></i> 出勤統計</button>
                 <button id="tab-manage" onclick="switchMode('manage')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-cog text-purple-500 mr-1"></i> 班級設定</button>
             </div>
 
@@ -163,6 +164,68 @@
                 </div>
             </div>
 
+            <!-- 出勤統計區塊 -->
+            <div id="att-summary-container" class="hidden space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-gray-700 mb-4"><i class="fas fa-clock text-red-500 mr-2"></i>遲到次數統計</h3>
+
+                    <!-- 查詢表單 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">起始日期</label>
+                            <input type="date" id="att-start-date" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-red-400 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">結束日期</label>
+                            <input type="date" id="att-end-date" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-red-400 outline-none text-sm">
+                        </div>
+                    </div>
+
+                    <!-- 節次多選 -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-gray-500">節次篩選（不勾選 = 查全部）</label>
+                            <div class="flex gap-2">
+                                <button onclick="attSelectAllPeriods(true)" class="text-xs text-blue-600 hover:underline">全選</button>
+                                <span class="text-gray-300">|</span>
+                                <button onclick="attSelectAllPeriods(false)" class="text-xs text-gray-400 hover:underline">取消全選</button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2" id="att-period-checkboxes">
+                            <!-- 由 JS 渲染 -->
+                        </div>
+                    </div>
+
+                    <button onclick="queryAttendanceSummary()" class="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-2 rounded-lg shadow transition text-sm">
+                        <i class="fas fa-search mr-1"></i>查詢
+                    </button>
+                </div>
+
+                <!-- 結果表格 -->
+                <div id="att-summary-result" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-red-50 p-4 border-b border-red-100 flex justify-between items-center">
+                        <h4 class="font-bold text-red-800" id="att-summary-title"><i class="fas fa-table mr-2"></i>查詢結果</h4>
+                        <button onclick="exportAttendanceSummaryCSV()" class="text-red-600 hover:text-red-800 text-sm font-bold bg-white px-3 py-1 rounded shadow-sm border border-red-100">
+                            <i class="fas fa-download mr-1"></i>匯出 CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr class="text-sm">
+                                    <th class="p-3 font-bold text-left w-20">學號</th>
+                                    <th class="p-3 font-bold text-left">姓名</th>
+                                    <th class="p-3 font-bold text-center text-red-700">遲到次數</th>
+                                    <th class="p-3 font-bold text-gray-500">遲到明細</th>
+                                </tr>
+                            </thead>
+                            <tbody id="att-summary-body" class="divide-y divide-gray-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- 週考新增/編輯 Modal -->
             <div id="weekly-config-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                 <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
@@ -222,6 +285,9 @@
     <div id="change-pwd-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"> <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all"> <div class="bg-gray-800 p-4 text-white flex justify-between items-center"><h3 class="font-bold text-lg"><i class="fas fa-user-lock mr-2"></i>更改個人密碼</h3><button onclick="document.getElementById('change-pwd-modal').classList.add('hidden')" class="text-white hover:text-gray-300 outline-none"><i class="fas fa-times text-xl"></i></button></div> <div class="p-6"> <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">請輸入「舊」密碼</label><input type="password" id="self-old-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="驗證您的身分"></div> <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">請輸入「新」密碼</label><input type="password" id="self-new-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="支援 0 開頭"></div> <div class="mb-6"><label class="block text-sm font-bold text-gray-700 mb-1">再次確認「新」密碼</label><input type="password" id="self-new-pwd-confirm" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="請再輸入一次"></div> <button id="btn-submit-change-pwd" onclick="submitChangePassword()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-lg shadow hover:bg-gray-900 transition">確認更改</button> </div> </div> </div>
 
     <script>
+        function escHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
         if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'teacher') { alert('權限不足！'); window.location.href = 'login.html'; }
 
@@ -244,8 +310,10 @@
             if (homeroomClass) {
                 document.getElementById('tab-homeroom').classList.remove('hidden');
                 document.getElementById('tab-weekly').classList.remove('hidden');
+                document.getElementById('tab-att-summary').classList.remove('hidden');
                 document.getElementById('tab-manage').classList.remove('hidden');
                 document.getElementById('tab-semester').classList.remove('hidden');
+                initAttPeriodCheckboxes();
                 document.getElementById('homeroom-title').innerText = `${homeroomClass}班 導師儀表板`;
                 switchMode('homeroom');
             } else { 
@@ -273,17 +341,18 @@
             resetTableState();
             document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">請重新載入資料</td></tr>';
 
-            const tabs = ['attendance', 'score', 'submission', 'announcement', 'homeroom', 'weekly', 'manage', 'semester'];
+            const tabs = ['attendance', 'score', 'submission', 'announcement', 'homeroom', 'weekly', 'att-summary', 'manage', 'semester'];
             tabs.forEach(t => {
                 let el = document.getElementById(`tab-${t}`);
                 if(el) {
-                    if ((t === 'homeroom' || t === 'weekly' || t === 'manage' || t === 'semester') && !homeroomClass) return;
+                    if ((t === 'homeroom' || t === 'weekly' || t === 'att-summary' || t === 'manage' || t === 'semester') && !homeroomClass) return;
                     el.className = "flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all";
                 }
             });
 
             document.getElementById('table-container').classList.add('hidden');
             document.getElementById('weekly-container').classList.add('hidden');
+            document.getElementById('att-summary-container').classList.add('hidden');
             document.getElementById('bulletin-container').classList.add('hidden');
             document.getElementById('homeroom-container').classList.add('hidden');
             document.getElementById('manage-container').classList.add('hidden');
@@ -312,6 +381,9 @@
             } else if (mode === 'semester') {
                 document.getElementById('filter-container').classList.add('hidden');
                 document.getElementById('semester-container').classList.remove('hidden');
+            } else if (mode === 'att-summary') {
+                document.getElementById('filter-container').classList.add('hidden');
+                document.getElementById('att-summary-container').classList.remove('hidden');
             } else if (mode === 'attendance') {
                 classContainer.classList.remove('hidden'); subjContainer.classList.remove('hidden'); examContainer.classList.add('hidden');
                 document.getElementById('table-container').classList.remove('hidden');
@@ -1052,6 +1124,105 @@
         async function submitStudent(mode, oldId) { const newId = document.getElementById('admin-stu-id').value.trim(); const newName = document.getElementById('admin-stu-name').value.trim(); if(!newId || !newName) return alert('學號與姓名不可空白！'); const btn = document.getElementById('admin-submit-btn'); btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理中...'; btn.disabled = true; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateStudentData', className: homeroomClass, oldStudentId: oldId, newStudentId: newId, newName: newName, mode: mode }) }); const result = await res.json(); alert(result.message); if(result.success) { closeAdminModal(); loadManageData(); } } catch(e) { alert('連線異常'); } finally { btn.innerHTML = '儲存資料'; btn.disabled = false; } }
         function openPasswordModal(username) { const modal = document.getElementById('admin-modal'); document.getElementById('modal-header').className = 'bg-purple-600 p-4 text-white flex justify-between items-center'; document.getElementById('modal-title').innerHTML = '<i class="fas fa-unlock-alt mr-2"></i>重設密碼'; document.getElementById('modal-body').innerHTML = ` <div class="bg-purple-50 p-3 rounded mb-4 text-sm text-purple-800 border border-purple-100"> 正在為帳號 <span class="font-black text-purple-900 bg-white px-2 py-0.5 rounded shadow-sm mx-1">${username}</span> 重設密碼。 </div> <div class="mb-6"> <label class="block text-sm font-bold text-gray-700 mb-1">請輸入新密碼</label> <input type="text" id="admin-new-pwd" placeholder="建議設定為家長手機號碼" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-purple-500 outline-none"> </div> <button id="admin-pwd-btn" onclick="submitPassword('${username}')" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg shadow hover:bg-purple-700 transition">確認重設密碼</button> `; modal.classList.remove('hidden'); }
         async function submitPassword(username) { const newPwd = document.getElementById('admin-new-pwd').value.trim(); if(!newPwd) return alert('新密碼不可空白！'); const btn = document.getElementById('admin-pwd-btn'); btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>重設中...'; btn.disabled = true; try { const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'resetUserPassword', className: homeroomClass, username: username, newPassword: newPwd }) }); const result = await res.json(); alert(result.message); if(result.success) closeAdminModal(); } catch(e) { alert('連線異常'); } finally { btn.innerHTML = '確認重設密碼'; btn.disabled = false; } }
+        // ==========================================
+        // 📋 出勤統計功能
+        // ==========================================
+        const ATT_PERIODS = ['早自修', '第1節', '第2節', '第3節', '第4節', '午休', '第5節', '第6節', '第7節', '第8節', '課後'];
+        let attSummaryData = null;
+
+        function initAttPeriodCheckboxes() {
+            const container = document.getElementById('att-period-checkboxes');
+            if (!container) return;
+            container.innerHTML = ATT_PERIODS.map(p => `
+                <label class="inline-flex items-center gap-1 bg-gray-100 hover:bg-red-50 border border-gray-200 hover:border-red-300 rounded-lg px-3 py-1.5 cursor-pointer transition text-sm font-bold text-gray-600 select-none">
+                    <input type="checkbox" class="att-period-cb accent-red-500" value="${p}">
+                    ${p}
+                </label>`).join('');
+        }
+
+        function attSelectAllPeriods(selectAll) {
+            document.querySelectorAll('.att-period-cb').forEach(cb => cb.checked = selectAll);
+        }
+
+        async function queryAttendanceSummary() {
+            const startDate = document.getElementById('att-start-date').value;
+            const endDate   = document.getElementById('att-end-date').value;
+            if (!startDate || !endDate) return alert('請選擇起訖日期！');
+            if (startDate > endDate) return alert('起始日期不能晚於結束日期！');
+
+            const checkedPeriods = Array.from(document.querySelectorAll('.att-period-cb:checked')).map(cb => cb.value);
+
+            const resultDiv = document.getElementById('att-summary-result');
+            const tbody = document.getElementById('att-summary-body');
+            resultDiv.classList.remove('hidden');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-blue-500"><i class="fas fa-spinner fa-spin mr-2"></i>查詢中...</td></tr>';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'getAttendanceSummary',
+                        className: homeroomClass,
+                        startDate: startDate,
+                        endDate: endDate,
+                        periods: checkedPeriods
+                    })
+                });
+                const result = await res.json();
+
+                if (!result.success) {
+                    attSummaryData = null;
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-8 text-red-500">查詢失敗：${escHtml(result.message)}</td></tr>`;
+                    return;
+                }
+
+                attSummaryData = { startDate, endDate, checkedPeriods, data: result.data };
+
+                const periodLabel = checkedPeriods.length === 0 ? '全部節次' : checkedPeriods.join('、');
+                document.getElementById('att-summary-title').innerHTML =
+                    `<i class="fas fa-table mr-2"></i>${startDate} ～ ${endDate}　遲到統計（${periodLabel}）`;
+
+                let html = '';
+                result.data.forEach(st => {
+                    const detailStr = st.details.length > 0
+                        ? st.details.map(d => `${escHtml(d.date)} ${escHtml(d.period)}`).join('、')
+                        : '—';
+                    const countClass = st.lateCount > 0 ? 'text-red-600 font-black text-lg' : 'text-gray-400';
+                    html += `<tr class="hover:bg-red-50 transition">
+                        <td class="p-3 text-sm font-mono text-gray-500">${escHtml(st.studentId)}</td>
+                        <td class="p-3 font-bold text-gray-800">${escHtml(st.name)}</td>
+                        <td class="p-3 text-center ${countClass}">${st.lateCount}</td>
+                        <td class="p-3 text-xs text-gray-500">${detailStr}</td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+
+            } catch (e) {
+                console.error('queryAttendanceSummary error:', e);
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500">網路連線異常</td></tr>';
+            }
+        }
+
+        function exportAttendanceSummaryCSV() {
+            if (!attSummaryData) return alert('請先執行查詢！');
+            const { startDate, endDate, checkedPeriods, data } = attSummaryData;
+            const periodLabel = checkedPeriods.length === 0 ? '全部節次' : checkedPeriods.join('+');
+
+            function csvEsc(s) { return '"' + String(s).replace(/"/g, '""') + '"'; }
+            let csv = '學號,姓名,遲到次數,遲到明細\n';
+            csv += data.map(st => {
+                const detailStr = st.details.map(d => `${d.date} ${d.period}`).join(' / ');
+                return `${st.studentId},${csvEsc(st.name)},${st.lateCount},${csvEsc(detailStr)}`;
+            }).join('\n');
+
+            const link = document.createElement('a');
+            link.setAttribute('href', 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv));
+            link.setAttribute('download', `${homeroomClass}班_遲到統計_${startDate}_${endDate}_${periodLabel}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
     </script>
 </body>
