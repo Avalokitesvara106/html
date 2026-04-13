@@ -46,6 +46,7 @@
                 <button id="tab-announcement" onclick="switchMode('announcement')" class="flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-bullhorn mr-1"></i> 聯絡簿</button>
                 <button id="tab-semester" onclick="switchMode('semester')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-trophy text-orange-500 mr-1"></i> 段考成績</button>
                 <button id="tab-homeroom" onclick="switchMode('homeroom')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-chart-pie text-yellow-500 mr-1"></i> 導師儀表板</button>
+                <button id="tab-weekly" onclick="switchMode('weekly')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-calendar-check text-green-500 mr-1"></i> 週考成績</button>
                 <button id="tab-manage" onclick="switchMode('manage')" class="hidden flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all"><i class="fas fa-cog text-purple-500 mr-1"></i> 班級設定</button>
             </div>
 
@@ -63,6 +64,7 @@
                 </div>
             </div>
 
+            <!-- 段考成績專屬區塊 -->
             <div id="semester-container" class="hidden space-y-6">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <div class="flex flex-col md:flex-row justify-between items-end gap-4">
@@ -126,10 +128,74 @@
                 </div>
             </div>
 
+            <!-- 其他原有管理區塊 -->
             <div id="manage-container" class="hidden space-y-6"> <div class="flex items-center justify-between border-b pb-2"><h2 class="text-xl font-black text-gray-800"><i class="fas fa-users-cog mr-2"></i>本班專屬管理後台</h2><span class="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full"><i class="fas fa-shield-alt mr-1"></i>導師最高權限</span></div> <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"> <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"><div class="bg-blue-50 p-4 border-b border-gray-200 flex justify-between items-center"><h3 class="font-bold text-blue-800"><i class="fas fa-user-graduate mr-2"></i>學生名單管理</h3><button onclick="openStudentModal('add')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><i class="fas fa-plus mr-1"></i>新增學生</button></div><div class="p-4 max-h-[60vh] overflow-y-auto"><ul id="manage-student-list" class="divide-y divide-gray-100"><li class="text-center py-4 text-gray-400">載入中...</li></ul></div></div> <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"><div class="bg-purple-50 p-4 border-b border-gray-200 flex justify-between items-center"><h3 class="font-bold text-purple-800"><i class="fas fa-key mr-2"></i>家長與幹部帳號管理</h3><button onclick="loadManageData()" class="text-purple-600 hover:text-purple-800 text-sm font-bold"><i class="fas fa-sync-alt mr-1"></i>重新整理</button></div><div class="p-4 max-h-[60vh] overflow-y-auto"><ul id="manage-account-list" class="divide-y divide-gray-100"><li class="text-center py-4 text-gray-400">載入中...</li></ul></div></div> </div> </div>
             <div id="homeroom-container" class="hidden space-y-6"> <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-2 gap-2"> <h2 class="text-xl font-black text-gray-800" id="homeroom-title">班級導師儀表板</h2> <div class="flex items-center gap-2"> <select id="hr-time-range" onchange="loadHomeroomOverview()" class="bg-gray-50 border border-gray-300 text-gray-700 text-xs rounded px-2 py-1.5 font-bold outline-none focus:ring-2 focus:ring-blue-400 shadow-sm cursor-pointer"> <option value="day">📅 單日檢視 (上方日期)</option> <option value="week">📊 近 7 日歷史累計</option> <option value="month">📈 近 30 日歷史累計</option> </select> <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap"><i class="fas fa-star mr-1"></i>導師專屬</span> </div> </div> <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> <div class="bg-white rounded-xl shadow-sm border-t-4 border-red-500 p-5"><h3 class="font-bold text-red-600 mb-4 text-base border-b border-gray-100 pb-2"><i class="fas fa-exclamation-triangle mr-2"></i>出缺席 & 課堂通報</h3><div id="hr-attendance-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">請點擊上方「載入資料」</div></div> <div class="bg-white rounded-xl shadow-sm border-t-4 border-yellow-500 p-5"><h3 class="font-bold text-yellow-600 mb-4 text-base border-b border-gray-100 pb-2"><i class="fas fa-book-open mr-2"></i>學科作業未交</h3><div id="hr-submission-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">請點擊上方「載入資料」</div></div> <div class="bg-white rounded-xl shadow-sm border-t-4 border-purple-500 p-5"><h3 class="font-bold text-purple-600 mb-4 text-base border-b border-gray-100 pb-2"><i class="fas fa-clipboard-check mr-2"></i>常規與聯絡簿</h3><div id="hr-routine-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">請點擊上方「載入資料」</div></div> <div class="bg-white rounded-xl shadow-sm border-t-4 border-blue-500 p-5 lg:col-span-1"><div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2"><h3 class="font-bold text-blue-600 text-base"><i class="fas fa-bed mr-2"></i>近期請假單</h3><button onclick="openProxyLeaveModal()" class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs font-bold border border-blue-200 shadow-sm transition"><i class="fas fa-plus mr-1"></i>代填請假</button></div><div id="hr-leave-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">請點擊上方「載入資料」</div></div> <div class="bg-white rounded-xl shadow-sm border-t-4 border-green-500 p-5 lg:col-span-2"><h3 class="font-bold text-green-600 mb-4 text-base border-b border-gray-100 pb-2"><i class="fas fa-chart-line mr-2"></i>各科平時成績</h3><div id="hr-score-list" class="space-y-3 text-sm max-h-[40vh] overflow-y-auto">請點擊上方「載入資料」</div></div> </div> </div>
+            <div id="weekly-container" class="hidden space-y-6">
+                <!-- 週考設定區 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 pb-4 mb-4">
+                        <h2 class="text-lg font-black text-gray-800"><i class="fas fa-calendar-check text-green-500 mr-2"></i>週考設定</h2>
+                        <button onclick="openWeeklyConfigModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700 transition text-sm shadow-sm"><i class="fas fa-plus mr-1"></i>新增週考</button>
+                    </div>
+                    <div id="weekly-config-list" class="space-y-2">
+                        <p class="text-center text-gray-400 py-4 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>載入中...</p>
+                    </div>
+                </div>
+
+                <!-- 週考成績區 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-green-50 p-4 border-b border-green-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                            <h3 class="font-bold text-green-800 text-base" id="weekly-result-title"><i class="fas fa-table mr-2"></i>請點擊上方週考的「查看成績」</h3>
+                            <p id="weekly-result-range" class="text-xs text-green-600 mt-0.5"></p>
+                        </div>
+                        <button onclick="exportWeeklyCSV()" id="weekly-export-btn" class="hidden bg-white border border-green-300 text-green-700 hover:bg-green-100 font-bold py-1.5 px-4 rounded-lg shadow-sm text-sm transition"><i class="fas fa-file-csv mr-1"></i>匯出 CSV</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-center border-collapse min-w-max">
+                            <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 text-sm" id="weekly-result-head"></thead>
+                            <tbody id="weekly-result-body" class="divide-y divide-gray-100">
+                                <tr><td colspan="6" class="text-center py-8 text-gray-400">尚未選擇週考</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 週考新增/編輯 Modal -->
+            <div id="weekly-config-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+                    <div class="bg-green-600 p-4 text-white flex justify-between items-center">
+                        <h3 class="font-bold text-lg" id="weekly-modal-title"><i class="fas fa-calendar-plus mr-2"></i>新增週考</h3>
+                        <button onclick="document.getElementById('weekly-config-modal').classList.add('hidden')" class="text-white hover:text-gray-200 outline-none"><i class="fas fa-times text-xl"></i></button>
+                    </div>
+                    <div class="p-6">
+                        <input type="hidden" id="weekly-edit-config-id">
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">週考名稱</label>
+                            <input type="text" id="weekly-config-name" placeholder="例：週考一、第1週週考" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-green-500 outline-none">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">開始日期</label>
+                            <input type="date" id="weekly-config-start" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-green-500 outline-none">
+                        </div>
+                        <div class="mb-5">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">結束日期</label>
+                            <input type="date" id="weekly-config-end" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-green-500 outline-none">
+                        </div>
+                        <div class="mb-5 flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <span class="text-sm font-bold text-gray-700"><i class="fas fa-eye text-blue-500 mr-1"></i>開放家長查閱</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="weekly-config-publish" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                        <button id="weekly-modal-save-btn" onclick="submitWeeklyConfig()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow hover:bg-green-700 transition">儲存設定</button>
+                    </div>
+                </div>
+            </div>
             <div id="bulletin-container" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-2"> <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-bullhorn text-blue-500 mr-2"></i>發布班級聯絡簿 / 佈告</h3> <textarea id="bulletin-content" rows="6" class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500" placeholder="請輸入今日要提醒家長或學生的事項..."></textarea> <div class="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200"> <label class="block text-sm font-bold text-gray-700 mb-2"><i class="fas fa-paperclip mr-1"></i>附加檔案 (照片或講義，上限 5MB)</label> <input type="file" id="bulletin-file" accept="image/*,.pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"> <div id="bulletin-file-link" class="mt-2 text-sm"></div> </div> <div class="mt-4 flex justify-end"><button id="save-bulletin-btn" onclick="saveBulletin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition"><i class="fas fa-paper-plane mr-2"></i> 發布 / 更新公告</button></div> </div>
-            
             <div id="table-container" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"> 
                 <div class="bg-blue-50 p-4 border-b border-gray-200 flex justify-between items-center"> 
                     <div id="stats-dashboard" class="text-blue-800 font-bold text-sm">請先載入名單</div> 
@@ -137,16 +203,7 @@
                 </div> 
                 <div id="readonly-warning" class="hidden bg-red-50 text-red-600 p-3 text-sm font-bold border-b border-red-100 flex items-center justify-center"> <i class="fas fa-lock mr-2"></i> 此任務由 <span id="task-creator-name" class="mx-1 underline"></span> 建立，您僅有檢視權限。 </div> 
                 <div id="batch-assign-container" class="hidden bg-indigo-50 p-4 border-b border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4"> <div class="flex-1 w-full"><label class="block text-xs font-bold text-indigo-700 mb-1"><i class="fas fa-magic mr-1"></i> 快速指派特定學生 (輸入座號，例: 1,3,5 或 1-5)</label><input type="text" id="batch-assign-input" placeholder="留空代表全班皆須繳交" class="w-full bg-white border border-indigo-200 rounded px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-indigo-400"></div> <button onclick="applyBatchAssign()" class="bg-indigo-600 text-white px-5 py-2 mt-4 sm:mt-0 rounded-lg shadow-sm text-sm font-bold hover:bg-indigo-700 transition">快速套用</button> </div> 
-                
-                <div class="overflow-x-auto"> 
-                    <table class="w-full text-left border-collapse min-w-max">
-                        <thead class="bg-gray-50 border-b border-gray-200" id="tableHeader"></thead>
-                        <tbody id="studentTableBody" class="divide-y divide-gray-100">
-                            <tr><td colspan="6" class="text-center py-8 text-gray-400">請載入資料</td></tr>
-                        </tbody>
-                    </table> 
-                </div> 
-                
+                <div class="overflow-x-auto"> <table class="w-full text-left border-collapse min-w-max"><thead class="bg-gray-50 border-b border-gray-200" id="tableHeader"></thead><tbody id="studentTableBody" class="divide-y divide-gray-100"><tr><td colspan="6" class="text-center py-8 text-gray-400">請載入資料</td></tr></tbody></table> </div> 
                 <div id="bottom-action-bar" class="bg-gray-50 p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 hidden"> 
                     <div class="flex gap-2 w-full sm:w-auto"> 
                         <button id="quick-fill-btn" onclick="quickFill()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 font-bold py-2 px-4 rounded-lg shadow-sm transition hidden flex-1 sm:flex-none"><i class="fas fa-check-circle mr-1"></i> 一鍵全班正常</button> 
@@ -159,6 +216,7 @@
         </div>
     </main>
 
+    <!-- Modals -->
     <div id="admin-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"> <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all"><div id="modal-header" class="bg-blue-600 p-4 text-white flex justify-between items-center"><h3 class="font-bold text-lg" id="modal-title">標題</h3><button onclick="closeAdminModal()" class="text-white hover:text-gray-200 outline-none"><i class="fas fa-times text-xl"></i></button></div><div class="p-6" id="modal-body"></div></div> </div>
     <div id="leave-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"> <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all"> <div class="bg-blue-600 p-4 text-white flex justify-between items-center"><h3 class="font-bold text-lg"><i class="fas fa-clipboard-list mr-2"></i>登記請假 / 早退</h3><button onclick="document.getElementById('leave-modal').classList.add('hidden')" class="text-white hover:text-gray-200 outline-none"><i class="fas fa-times text-xl"></i></button></div> <div class="p-6"> <div class="bg-blue-50 p-3 rounded mb-4 text-xs text-blue-800 border border-blue-100">💡 登記後，該學生今日在所有點名表中將自動預設為「請假」。</div> <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">選擇學生</label><select id="leave-stu-select" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="">載入中...</option></select></div> <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">假別</label><select id="leave-type" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"><option value="病假">病假</option><option value="事假">事假</option><option value="公假">公假</option><option value="喪假">喪假</option><option value="早退">早退 (中途離校)</option></select></div> <div class="mb-6"><label class="block text-sm font-bold text-gray-700 mb-1">事由 / 備註</label><input type="text" id="leave-reason" placeholder="例如：發燒 / 第四節後離校" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"></div> <button id="btn-submit-leave" onclick="submitProxyLeave()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 transition">確認送出</button> </div> </div> </div>
     <div id="change-pwd-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"> <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all"> <div class="bg-gray-800 p-4 text-white flex justify-between items-center"><h3 class="font-bold text-lg"><i class="fas fa-user-lock mr-2"></i>更改個人密碼</h3><button onclick="document.getElementById('change-pwd-modal').classList.add('hidden')" class="text-white hover:text-gray-300 outline-none"><i class="fas fa-times text-xl"></i></button></div> <div class="p-6"> <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">請輸入「舊」密碼</label><input type="password" id="self-old-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="驗證您的身分"></div> <div class="mb-4"><label class="block text-sm font-bold text-gray-700 mb-1">請輸入「新」密碼</label><input type="password" id="self-new-pwd" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="支援 0 開頭"></div> <div class="mb-6"><label class="block text-sm font-bold text-gray-700 mb-1">再次確認「新」密碼</label><input type="password" id="self-new-pwd-confirm" class="w-full border-gray-300 border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="請再輸入一次"></div> <button id="btn-submit-change-pwd" onclick="submitChangePassword()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-lg shadow hover:bg-gray-900 transition">確認更改</button> </div> </div> </div>
@@ -167,14 +225,15 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwunBwJT2u3gpAcnibQW4RBOQhuzQXLtcirT4_6G6fG9FgwJjTAApax5fU0VZ1dNvdRog/exec";
         if (!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('userRole') !== 'teacher') { alert('權限不足！'); window.location.href = 'login.html'; }
 
-        // --- 狀態管理 ---
         let currentMode = 'attendance', studentData = [];
+        let weeklyConfigs = [];       // 週考設定清單
+        let currentWeeklyConfigId = null; // 當前查看的週考 configId
+        let weeklyResultData = null;  // 當前週考成績結果
         const datePicker = document.getElementById('datePicker'), classSelect = document.getElementById('classSelect'), subjectSelect = document.getElementById('subjectSelect'), examNameInput = document.getElementById('examNameInput');
         const homeroomClass = sessionStorage.getItem('homeroom') || '';
         const myCreatorName = sessionStorage.getItem('username') || ''; 
         const loginUsername = sessionStorage.getItem('username') || ''; 
 
-        // --- 初始化 ---
         document.addEventListener('DOMContentLoaded', () => {
             datePicker.valueAsDate = new Date();
             let titleText = myCreatorName + " 老師";
@@ -184,137 +243,16 @@
             
             if (homeroomClass) {
                 document.getElementById('tab-homeroom').classList.remove('hidden');
+                document.getElementById('tab-weekly').classList.remove('hidden');
                 document.getElementById('tab-manage').classList.remove('hidden');
                 document.getElementById('tab-semester').classList.remove('hidden');
                 document.getElementById('homeroom-title').innerText = `${homeroomClass}班 導師儀表板`;
-                switchMode('homeroom'); 
+                switchMode('homeroom');
             } else { 
                 fetchSubjectSchedule(); 
             }
         });
 
-        window.addEventListener('beforeunload', function (e) { 
-            if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '未儲存離開？'; } 
-        });
-
-        // --- DOM 優化：資料變更處理 (不再全表重建) ---
-        function handleDataChange(index, field, element) {
-            // 1. 更新資料陣列狀態
-            studentData[index][field] = element.value;
-            studentData[index].isSaved = false;
-
-            // 2. 局部更新該行 (Row) 的 CSS 與按鈕，不重建整個 Table
-            const tr = document.getElementById(`row-${index}`);
-            if (tr) {
-                tr.classList.remove('bg-gray-100');
-                tr.classList.add('bg-white');
-                
-                // 針對出缺席變更套用特效
-                if (currentMode === 'attendance' && field === 'attendance') {
-                    if (element.value === 'leave') tr.classList.add('bg-blue-50');
-                    else tr.classList.remove('bg-blue-50');
-                }
-
-                // 更新操作按鈕狀態為「編輯中」
-                const actionBtnTd = document.getElementById(`action-${index}`);
-                if (actionBtnTd) actionBtnTd.innerHTML = `<button class="text-blue-400 px-3 py-1 cursor-default"><i class="fas fa-pen"></i></button>`;
-            }
-            
-            // 3. 更新儀表板統計
-            updateDashboardStats();
-        }
-
-        function toggleFlag(index) { 
-            studentData[index].isFlagged = !studentData[index].isFlagged; 
-            studentData[index].isSaved = false;
-            
-            // 局部更新星星顏色與列狀態
-            const starBtn = document.getElementById(`flag-${index}`);
-            if (starBtn) {
-                starBtn.className = studentData[index].isFlagged ? 'text-yellow-500 transition outline-none text-lg' : 'text-gray-300 hover:text-yellow-400 transition outline-none text-lg';
-            }
-            handleDataChange(index, 'dummyTrigger', {value: ''}); 
-        }
-
-        function toggleEdit(index) { 
-            studentData[index].isSaved = false; 
-            // 局部解除鎖定
-            const tr = document.getElementById(`row-${index}`);
-            if (tr) {
-                const inputs = tr.querySelectorAll('input, select');
-                inputs.forEach(inp => inp.disabled = false);
-            }
-            handleDataChange(index, 'dummyTrigger', {value: ''}); 
-        }
-
-        // --- 核心渲染邏輯 ---
-        function renderTable(isReadOnly = false) {
-            const tbody = document.getElementById('studentTableBody');
-            tbody.innerHTML = '';
-            updateDashboardStats(); 
-            
-            if(studentData.length === 0) return tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">此班級無資料</td></tr>';
-            
-            let htmlBuffer = '';
-            studentData.forEach((st, i) => {
-                const disabled = (st.isSaved || isReadOnly) ? 'disabled' : '';
-                const rowClass = st.isSaved ? 'bg-gray-100' : 'bg-white';
-                const leaveClass = (st.attendance === 'leave' && !st.isSaved) ? 'bg-blue-50' : '';
-                const exemptClass = (currentMode === 'submission' && (st.status === 'exempt' || st.status === 'leave')) ? 'bg-gray-50 opacity-70' : '';
-                
-                let actionBtn = isReadOnly ? 
-                    `<i class="fas fa-lock text-gray-300"></i>` : 
-                    (st.isSaved ? `<button onclick="toggleEdit(${i})" class="text-gray-500 hover:text-blue-600 px-3 py-1"><i class="fas fa-pencil-alt"></i></button>` : `<button class="text-blue-400 px-3 py-1 cursor-default"><i class="fas fa-pen"></i></button>`);
-                
-                // 賦予行專屬 ID (row-i) 以利後續單獨更新
-                htmlBuffer += `<tr id="row-${i}" class="hover:bg-blue-50 transition ${rowClass} ${leaveClass} ${exemptClass}">
-                    <td class="p-4 text-sm font-mono">${st.studentId}</td>
-                    <td class="p-4 text-sm font-bold min-w-[80px]">${st.name}</td>`;
-                
-                if (currentMode === 'attendance') {
-                    let sClass = st.attendance === 'leave' ? 'w-full border rounded p-1 text-sm font-bold text-blue-600' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
-                    let starColor = st.isFlagged ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400';
-                    htmlBuffer += `<td class="p-4">
-                                <select id="att-${i}" onchange="handleDataChange(${i}, 'attendance', this)" class="${sClass}" ${disabled}>
-                                    <option value="present" ${st.attendance === 'present' ? 'selected' : ''}>✅ 正常</option>
-                                    <option value="late" ${st.attendance === 'late' ? 'selected' : ''}>⚠️ 遲到</option>
-                                    <option value="absent" ${st.attendance === 'absent' ? 'selected' : ''}>❌ 缺席</option>
-                                    <option value="leave" ${st.attendance === 'leave' ? 'selected' : ''}>🛌 請假</option>
-                                </select>
-                             </td>
-                             <td class="p-4">
-                                 <div class="flex items-center gap-2">
-                                     <button id="flag-${i}" onclick="toggleFlag(${i})" class="${starColor} transition outline-none text-lg" ${isReadOnly ? 'disabled' : ''}><i class="fas fa-star"></i></button>
-                                     <input type="text" id="com-${i}" oninput="handleDataChange(${i}, 'comment', this)" value="${st.comment}" placeholder="輸入評語" class="w-full border rounded p-1 text-sm min-w-[120px] focus:ring-2 focus:ring-blue-400 outline-none" ${disabled}>
-                                 </div>
-                             </td>`;
-                } else if (currentMode === 'submission') {
-                    let sStatus = st.status || 'pending';
-                    if (isReadOnly) {
-                        let badgeText = sStatus==='done'?'已交':(sStatus==='pending'?'未交':(sStatus==='exempt'?'免交':(sStatus==='leave'?'請假':'缺交')));
-                        let badgeColor = sStatus==='done'?'bg-green-100 text-green-700':(sStatus==='pending'?'bg-yellow-100 text-yellow-700':(sStatus==='exempt'?'bg-gray-100 text-gray-500':(sStatus==='leave'?'bg-blue-100 text-blue-700':'bg-red-100 text-red-700')));
-                        htmlBuffer += `<td class="p-4"><span class="${badgeColor} px-2 py-1 text-xs font-bold rounded">${badgeText}</span></td>`;
-                    } else {
-                        let sClass = (sStatus === 'exempt' || sStatus === 'leave') ? 'w-full border rounded p-1 text-sm text-gray-500' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
-                        htmlBuffer += `<td class="p-4">
-                                    <select id="sub-${i}" onchange="handleDataChange(${i}, 'status', this)" class="${sClass}" ${disabled}>
-                                        <option value="done" ${sStatus === 'done' ? 'selected' : ''}>✅ 已交</option>
-                                        <option value="pending" ${sStatus === 'pending' ? 'selected' : ''}>⚠️ 未交</option>
-                                        <option value="missing" ${sStatus === 'missing' ? 'selected' : ''}>❌ 缺交</option>
-                                        <option value="exempt" ${sStatus === 'exempt' ? 'selected' : ''}>🚫 免交</option>
-                                        <option value="leave" ${sStatus === 'leave' ? 'selected' : ''}>🛌 請假</option>
-                                    </select>
-                                 </td>`;
-                    }
-                } else {
-                    htmlBuffer += `<td class="p-4"><input type="number" id="sco-${i}" oninput="handleDataChange(${i}, 'score', this)" value="${st.score}" placeholder="分數" min="0" max="100" class="w-full border rounded p-1 text-sm" ${disabled}></td>`;
-                }
-                htmlBuffer += `<td id="action-${i}" class="p-4 text-center">${actionBtn}</td></tr>`;
-            });
-            tbody.innerHTML = htmlBuffer;
-        }
-
-        // --- API 呼叫與控制邏輯 ---
         function handleFilterChange() {
             resetTableState();
             if (currentMode === 'homeroom') loadHomeroomOverview();
@@ -328,22 +266,24 @@
         classSelect.addEventListener('change', handleFilterChange);
         subjectSelect.addEventListener('change', () => { resetTableState(); if (currentMode === 'score') fetchExistingItems(); });
         examNameInput.addEventListener('input', resetTableState);
+        window.addEventListener('beforeunload', function (e) { if (studentData.some(st => !st.isSaved)) { e.preventDefault(); e.returnValue = '未儲存離開？'; } });
 
         function switchMode(mode) {
             currentMode = mode;
             resetTableState();
             document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">請重新載入資料</td></tr>';
 
-            const tabs = ['attendance', 'score', 'submission', 'announcement', 'homeroom', 'manage', 'semester'];
+            const tabs = ['attendance', 'score', 'submission', 'announcement', 'homeroom', 'weekly', 'manage', 'semester'];
             tabs.forEach(t => {
                 let el = document.getElementById(`tab-${t}`);
                 if(el) {
-                    if ((t === 'homeroom' || t === 'manage' || t === 'semester') && !homeroomClass) return;
+                    if ((t === 'homeroom' || t === 'weekly' || t === 'manage' || t === 'semester') && !homeroomClass) return;
                     el.className = "flex-1 min-w-[100px] py-2 text-center rounded-md text-gray-500 hover:text-gray-700 font-bold transition-all";
                 }
             });
 
             document.getElementById('table-container').classList.add('hidden');
+            document.getElementById('weekly-container').classList.add('hidden');
             document.getElementById('bulletin-container').classList.add('hidden');
             document.getElementById('homeroom-container').classList.add('hidden');
             document.getElementById('manage-container').classList.add('hidden');
@@ -360,7 +300,11 @@
             if (mode === 'homeroom') {
                 classContainer.classList.add('hidden'); subjContainer.classList.add('hidden'); examContainer.classList.add('hidden');
                 document.getElementById('homeroom-container').classList.remove('hidden');
-                loadHomeroomOverview();
+                loadHomeroomOverview();            } else if (mode === 'weekly') {
+                classContainer.classList.add('hidden'); subjContainer.classList.add('hidden'); examContainer.classList.add('hidden');
+                document.getElementById('weekly-container').classList.remove('hidden');
+                document.getElementById('filter-container').classList.add('hidden');
+                loadWeeklyConfigs();
             } else if (mode === 'manage') {
                 document.getElementById('filter-container').classList.add('hidden');
                 document.getElementById('manage-container').classList.remove('hidden');
@@ -408,6 +352,495 @@
             document.getElementById('batch-assign-container').classList.add('hidden');
         }
 
+        // ==========================================
+        // 📅 週考功能（API 版本）
+        // ==========================================
+
+        // 載入並渲染週考設定清單
+        async function loadWeeklyConfigs() {
+            const listEl = document.getElementById('weekly-config-list');
+            listEl.innerHTML = '<p class="text-center text-gray-400 py-4 text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>載入中...</p>';
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getWeeklyExamConfigs', className: homeroomClass })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    weeklyConfigs = result.configs;
+                    renderWeeklyConfigList();
+                } else {
+                    listEl.innerHTML = `<p class="text-red-500 text-sm text-center py-3">載入失敗：${result.message}</p>`;
+                }
+            } catch (e) {
+                listEl.innerHTML = '<p class="text-red-500 text-sm text-center py-3">網路連線異常</p>';
+            }
+        }
+
+        function renderWeeklyConfigList() {
+            const listEl = document.getElementById('weekly-config-list');
+            if (weeklyConfigs.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-gray-400 py-6 text-sm">尚無週考設定，請點擊「新增週考」建立第一筆。</p>';
+                return;
+            }
+            let html = '';
+            weeklyConfigs.forEach(cfg => {
+                let publishBadge = cfg.isPublished
+                    ? '<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded border border-green-200"><i class="fas fa-eye mr-1"></i>已開放</span>'
+                    : '<span class="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded border border-gray-200"><i class="fas fa-eye-slash mr-1"></i>已隱藏</span>';
+                let isActive = cfg.configId === currentWeeklyConfigId;
+                let activeStyle = isActive ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-white';
+                html += `
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-lg border ${activeStyle} gap-2">
+                    <div>
+                        <div class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                            ${cfg.examName} ${publishBadge}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            <i class="far fa-calendar-alt mr-1"></i>${cfg.startDate} ～ ${cfg.endDate}
+                        </div>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button onclick="viewWeeklyResult('${cfg.configId}')" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-green-700 transition shadow-sm"><i class="fas fa-table mr-1"></i>查看成績</button>
+                        <button onclick="openWeeklyConfigModal('${cfg.configId}')" class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-100 border border-blue-200 transition"><i class="fas fa-pen mr-1"></i>編輯</button>
+                        <button onclick="deleteWeeklyConfig('${cfg.configId}', '${cfg.examName}')" class="bg-red-50 text-red-500 px-3 py-1.5 rounded text-xs font-bold hover:bg-red-100 border border-red-200 transition"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>`;
+            });
+            listEl.innerHTML = html;
+        }
+
+        function openWeeklyConfigModal(configId = null) {
+            const modal = document.getElementById('weekly-config-modal');
+            const titleEl = document.getElementById('weekly-modal-title');
+            document.getElementById('weekly-edit-config-id').value = '';
+            document.getElementById('weekly-config-name').value = '';
+            document.getElementById('weekly-config-start').value = '';
+            document.getElementById('weekly-config-end').value = '';
+            document.getElementById('weekly-config-publish').checked = false;
+
+            if (configId) {
+                const cfg = weeklyConfigs.find(c => c.configId === configId);
+                if (cfg) {
+                    titleEl.innerHTML = '<i class="fas fa-calendar-edit mr-2"></i>編輯週考';
+                    document.getElementById('weekly-edit-config-id').value = cfg.configId;
+                    document.getElementById('weekly-config-name').value = cfg.examName;
+                    document.getElementById('weekly-config-start').value = cfg.startDate;
+                    document.getElementById('weekly-config-end').value = cfg.endDate;
+                    document.getElementById('weekly-config-publish').checked = cfg.isPublished;
+                }
+            } else {
+                titleEl.innerHTML = '<i class="fas fa-calendar-plus mr-2"></i>新增週考';
+            }
+            modal.classList.remove('hidden');
+        }
+
+        async function submitWeeklyConfig() {
+            const editId = document.getElementById('weekly-edit-config-id').value.trim();
+            const examName = document.getElementById('weekly-config-name').value.trim();
+            const startDate = document.getElementById('weekly-config-start').value;
+            const endDate = document.getElementById('weekly-config-end').value;
+            const isPublished = document.getElementById('weekly-config-publish').checked;
+
+            if (!examName) return alert('請輸入週考名稱！');
+            if (!startDate || !endDate) return alert('請設定開始與結束日期！');
+            if (startDate > endDate) return alert('結束日期不可早於開始日期！');
+
+            const configId = editId || ('WE-' + new Date().getTime());
+            const btn = document.getElementById('weekly-modal-save-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'saveWeeklyExamConfig',
+                        className: homeroomClass,
+                        config: { configId, examName, startDate, endDate, isPublished }
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    document.getElementById('weekly-config-modal').classList.add('hidden');
+                    await loadWeeklyConfigs();
+                    // 若正在查看此週考，自動重新整理成績
+                    if (currentWeeklyConfigId === configId) viewWeeklyResult(configId);
+                } else {
+                    alert('儲存失敗：' + result.message);
+                }
+            } catch (e) {
+                alert('網路連線異常，請稍後再試。');
+            } finally {
+                btn.innerHTML = '儲存設定';
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteWeeklyConfig(configId, examName) {
+            if (!confirm(`⚠️ 確定要刪除週考「${examName}」的設定嗎？\n（不會影響 Score_Records 中的平時成績）`)) return;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'deleteWeeklyExamConfig', className: homeroomClass, configId })
+                });
+                const result = await res.json();
+                alert(result.message);
+                if (result.success) {
+                    if (currentWeeklyConfigId === configId) {
+                        currentWeeklyConfigId = null;
+                        weeklyResultData = null;
+                        document.getElementById('weekly-result-title').innerHTML = '<i class="fas fa-table mr-2"></i>請點擊上方週考的「查看成績」';
+                        document.getElementById('weekly-result-range').innerText = '';
+                        document.getElementById('weekly-result-head').innerHTML = '';
+                        document.getElementById('weekly-result-body').innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">尚未選擇週考</td></tr>';
+                        document.getElementById('weekly-export-btn').classList.add('hidden');
+                    }
+                    await loadWeeklyConfigs();
+                }
+            } catch (e) {
+                alert('網路連線異常');
+            }
+        }
+
+        async function viewWeeklyResult(configId) {
+            currentWeeklyConfigId = configId;
+            renderWeeklyConfigList(); // 更新 active 狀態
+
+            const head = document.getElementById('weekly-result-head');
+            const body = document.getElementById('weekly-result-body');
+            head.innerHTML = '';
+            body.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-blue-500"><i class="fas fa-spinner fa-spin mr-2"></i>計算成績中...</td></tr>';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getWeeklyExamResult', className: homeroomClass, configId })
+                });
+                const result = await res.json();
+                if (!result.success) {
+                    body.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-500">載入失敗：${result.message}</td></tr>`;
+                    return;
+                }
+                weeklyResultData = result;
+
+                // 更新標題與日期範圍
+                document.getElementById('weekly-result-title').innerHTML =
+                    `<i class="fas fa-table mr-2"></i>${result.config.examName} 成績表`;
+                document.getElementById('weekly-result-range').innerText =
+                    `${result.config.startDate} ～ ${result.config.endDate}`;
+                document.getElementById('weekly-export-btn').classList.remove('hidden');
+
+                const subjectList = result.subjectList;
+                const subjectExamMap = result.subjectExamMap;
+
+                if (subjectList.length === 0) {
+                    head.innerHTML = '';
+                    body.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">此日期範圍內尚無任何成績紀錄</td></tr>';
+                    return;
+                }
+
+                // 表頭：學號 | 姓名 | 各科（考試名稱） | 加權總分 | 加權平均 | 班排
+                let thHtml = '<tr class="text-sm">';
+                thHtml += '<th class="p-3 font-bold text-left w-20">學號</th>';
+                thHtml += '<th class="p-3 font-bold text-left w-24">姓名</th>';
+                subjectList.forEach(subj => {
+                    let examLabel = subjectExamMap[subj] ? `<br><span class="text-[10px] text-gray-400 font-normal">${subjectExamMap[subj]}</span>` : '';
+                    thHtml += `<th class="p-3 font-bold">${subj}${examLabel}</th>`;
+                });
+                thHtml += '<th class="p-3 font-bold text-blue-700 bg-blue-50 border-l border-blue-100">加權總分</th>';
+                thHtml += '<th class="p-3 font-bold text-blue-700 bg-blue-50">加權平均</th>';
+                thHtml += '<th class="p-3 font-bold text-orange-600 bg-orange-50 border-l border-orange-100">班排</th>';
+                thHtml += '</tr>';
+                head.innerHTML = thHtml;
+
+                // 表身
+                let tbHtml = '';
+                result.data.forEach(st => {
+                    let rowBg = 'bg-white';
+                    tbHtml += `<tr class="hover:bg-green-50 transition ${rowBg}">`;
+                    tbHtml += `<td class="p-3 text-sm font-mono text-gray-500 text-left">${st.studentId}</td>`;
+                    tbHtml += `<td class="p-3 font-bold text-gray-800 text-left">${st.name}</td>`;
+                    subjectList.forEach(subj => {
+                        let rec = st.subjectScores[subj];
+                        let scoreDisp = rec ? rec.score : '--';
+                        let scoreClass = (rec && rec.score < 60) ? 'text-red-600 font-bold' : 'text-gray-700';
+                        tbHtml += `<td class="p-3 text-sm ${scoreClass}">${scoreDisp}</td>`;
+                    });
+                    let wTotalDisp = st.wTotal !== null ? st.wTotal : '--';
+                    let wAvgDisp = st.wAvg !== null ? st.wAvg : '--';
+                    let rankDisp = st.rank !== null ? st.rank : '--';
+                    tbHtml += `<td class="p-3 font-bold text-blue-700 bg-blue-50/30 border-l border-blue-50">${wTotalDisp}</td>`;
+                    tbHtml += `<td class="p-3 font-bold text-blue-700 bg-blue-50/30">${wAvgDisp}</td>`;
+                    tbHtml += `<td class="p-3 font-bold text-orange-600 bg-orange-50/30 border-l border-orange-50">${rankDisp}</td>`;
+                    tbHtml += '</tr>';
+                });
+                body.innerHTML = tbHtml;
+
+            } catch (e) {
+                body.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-red-500">網路連線異常</td></tr>';
+            }
+        }
+
+        function exportWeeklyCSV() {
+            if (!weeklyResultData || !weeklyResultData.success) return alert('請先載入週考成績！');
+            const result = weeklyResultData;
+            const subjectList = result.subjectList;
+            const subjectExamMap = result.subjectExamMap;
+
+            // 表頭
+            let csvHeader = '學號,姓名,' +
+                subjectList.map(s => `"${s}(${subjectExamMap[s] || s})"`).join(',') +
+                ',加權總分,加權平均,班排\n';
+
+            // 資料列
+            let csvRows = result.data.map(st => {
+                let scores = subjectList.map(subj => {
+                    let rec = st.subjectScores[subj];
+                    return rec ? rec.score : '';
+                });
+                return [
+                    st.studentId,
+                    `"${st.name}"`,
+                    ...scores,
+                    st.wTotal !== null ? st.wTotal : '',
+                    st.wAvg !== null ? st.wAvg : '',
+                    st.rank !== null ? st.rank : ''
+                ].join(',');
+            }).join('\n');
+
+            let csv = csvHeader + csvRows;
+            const link = document.createElement('a');
+            link.setAttribute('href', 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv));
+            link.setAttribute('download', `${result.config.examName}_${homeroomClass}_週考成績.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 🏆 段考成績管理專屬邏輯 (支援校排與開放查閱)
+        // ==========================================
+        let currentSemesterData = [];
+        let currentPublishStatus = false;
+        
+        async function loadSemesterData() {
+            const examName = document.getElementById('se-exam-select').value;
+            const btn = document.getElementById('se-load-btn');
+            
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> 載入中`;
+            btn.disabled = true;
+            document.getElementById('se-tbody').innerHTML = '<tr><td colspan="11" class="text-center py-8 text-gray-400">連線讀取中...</td></tr>';
+            document.getElementById('se-save-btn').classList.add('hidden');
+            document.getElementById('se-tfoot').classList.add('hidden');
+            document.getElementById('se-publish-container').classList.add('hidden');
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'loadSemesterExams', className: homeroomClass, examName: examName })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentSemesterData = result.data;
+                    
+                    // 設定開放狀態
+                    currentPublishStatus = (result.isPublished === true);
+                    document.getElementById('se-publish-toggle').checked = currentPublishStatus;
+                    updatePublishText();
+                    
+                    renderSemesterTable();
+                    document.getElementById('se-save-btn').classList.remove('hidden');
+                    document.getElementById('se-publish-container').classList.remove('hidden');
+                } else {
+                    alert('載入失敗：' + result.message);
+                }
+            } catch (error) {
+                alert('連線異常。');
+            } finally {
+                btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入名單`;
+                btn.disabled = false;
+            }
+        }
+
+        function updatePublishText() {
+            const isChecked = document.getElementById('se-publish-toggle').checked;
+            currentPublishStatus = isChecked;
+            const textEl = document.getElementById('se-publish-text');
+            textEl.innerText = isChecked ? '已開放' : '已隱藏';
+            textEl.className = isChecked ? 'ml-3 text-sm font-bold text-green-600' : 'ml-3 text-sm font-medium text-gray-500';
+        }
+
+        function renderSemesterTable() {
+            const tbody = document.getElementById('se-tbody');
+            const tfoot = document.getElementById('se-tfoot');
+            tbody.innerHTML = '';
+            
+            const subjects = [
+                { key: 'chi', weight: 5 }, { key: 'eng', weight: 3 }, 
+                { key: 'math', weight: 4 }, { key: 'soc', weight: 3 }, { key: 'sci', weight: 3 }
+            ];
+            const TOTAL_WEIGHT = 18;
+
+            let validCount = 0;
+            let sumSubj = { chi: 0, eng: 0, math: 0, soc: 0, sci: 0 };
+            let cntSubj = { chi: 0, eng: 0, math: 0, soc: 0, sci: 0 };
+
+            currentSemesterData.forEach(st => {
+                let hasData = false;
+                let weightedTotal = 0;
+                
+                subjects.forEach(sub => {
+                    let score = parseFloat(st.scores[sub.key]);
+                    if (!isNaN(score)) {
+                        weightedTotal += (score * sub.weight);
+                        sumSubj[sub.key] += score;
+                        cntSubj[sub.key]++;
+                        hasData = true;
+                    }
+                });
+
+                if (hasData) {
+                    st.wTotal = weightedTotal;
+                    st.wAvg = parseFloat((weightedTotal / TOTAL_WEIGHT).toFixed(2));
+                    validCount++;
+                } else {
+                    st.wTotal = null;
+                    st.wAvg = null;
+                    st.rank = '--';
+                }
+            });
+
+            let rankList = [...currentSemesterData].filter(s => s.wAvg !== null).sort((a, b) => b.wAvg - a.wAvg);
+            let currentRank = 1;
+            rankList.forEach((st, index) => {
+                if (index > 0 && st.wAvg === rankList[index - 1].wAvg) {
+                    st.rank = rankList[index - 1].rank;
+                } else {
+                    st.rank = currentRank;
+                }
+                currentRank++;
+                currentSemesterData.find(s => s.studentId === st.studentId).rank = st.rank;
+            });
+
+            currentSemesterData.forEach((st, idx) => {
+                let tr = document.createElement('tr');
+                tr.className = "hover:bg-orange-50 transition border-b border-gray-100 bg-white";
+                
+                let inputsHtml = '';
+                subjects.forEach(sub => {
+                    inputsHtml += `
+                        <td class="p-2">
+                            <input type="number" value="${st.scores[sub.key]}" min="0" max="100" 
+                                onchange="updateSemesterScore(${idx}, '${sub.key}', this.value)" 
+                                class="w-16 border rounded p-1 text-center text-sm focus:ring-2 focus:ring-orange-400 outline-none">
+                        </td>`;
+                });
+
+                let wTotalDisp = st.wTotal !== null ? st.wTotal : '--';
+                let wAvgDisp = st.wAvg !== null ? st.wAvg : '--';
+                let sRankVal = st.scores.sRank || "";
+
+                tr.innerHTML = `
+                    <td class="p-3 font-mono text-sm text-gray-500 text-left">${st.studentId}</td>
+                    <td class="p-3 font-bold text-gray-800 text-left">${st.name}</td>
+                    ${inputsHtml}
+                    <td class="p-3 font-bold text-blue-700 bg-blue-50/30 border-l border-blue-50">${wTotalDisp}</td>
+                    <td class="p-3 font-bold text-blue-700 bg-blue-50/30">${wAvgDisp}</td>
+                    <td class="p-3 font-bold text-orange-600 bg-orange-50/30 border-l border-orange-50">${st.rank || '--'}</td>
+                    <td class="p-2 bg-purple-50/30 border-l border-purple-50 text-center">
+                        <input type="text" value="${sRankVal}" onchange="updateSemesterSRank(${idx}, this.value)" placeholder="--" class="w-16 border border-purple-200 rounded p-1 text-center text-sm focus:ring-2 focus:ring-purple-400 outline-none">
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            let tfootHtml = `<tr><td colspan="2" class="p-3 text-right">各科班級平均：</td>`;
+            subjects.forEach(sub => {
+                let avg = cntSubj[sub.key] > 0 ? (sumSubj[sub.key] / cntSubj[sub.key]).toFixed(1) : '--';
+                tfootHtml += `<td class="p-3 text-center">${avg}</td>`;
+            });
+            tfootHtml += `<td colspan="4"></td></tr>`;
+            tfoot.innerHTML = tfootHtml;
+            tfoot.classList.remove('hidden');
+        }
+
+        function updateSemesterScore(idx, subjectKey, val) {
+            currentSemesterData[idx].scores[subjectKey] = val.trim();
+            renderSemesterTable(); 
+        }
+
+        function updateSemesterSRank(idx, val) {
+            currentSemesterData[idx].scores.sRank = val.trim();
+        }
+
+        async function saveSemesterData() {
+            const btn = document.getElementById('se-save-btn');
+            const examName = document.getElementById('se-exam-select').value;
+            
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...`;
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'saveSemesterExams', 
+                        className: homeroomClass, 
+                        examName: examName, 
+                        records: currentSemesterData,
+                        isPublished: currentPublishStatus
+                    })
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert('連線異常，儲存失敗');
+            } finally {
+                btn.innerHTML = `<i class="fas fa-save mr-2"></i> 儲存段考成績`;
+                btn.disabled = false;
+            }
+        }
+
+        function processSemesterCSV(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (currentSemesterData.length === 0) return alert("請先點擊「載入名單」取得本班學生列表後再匯入");
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const text = event.target.result;
+                const rows = text.split('\n');
+                
+                let matchCount = 0;
+                rows.forEach(row => {
+                    const cols = row.trim().split(',');
+                    if (cols.length >= 6) {
+                        const sId = cols[0].trim();
+                        const targetSt = currentSemesterData.find(s => s.studentId === sId);
+                        if (targetSt) {
+                            targetSt.scores.chi = cols[1].trim() !== "" ? parseFloat(cols[1].trim()) : "";
+                            targetSt.scores.eng = cols[2].trim() !== "" ? parseFloat(cols[2].trim()) : "";
+                            targetSt.scores.math = cols[3].trim() !== "" ? parseFloat(cols[3].trim()) : "";
+                            targetSt.scores.soc = cols[4].trim() !== "" ? parseFloat(cols[4].trim()) : "";
+                            targetSt.scores.sci = cols[5].trim() !== "" ? parseFloat(cols[5].trim()) : "";
+                            // 讀取校排 (第7欄)
+                            if(cols.length >= 7) targetSt.scores.sRank = cols[6].trim();
+                            
+                            matchCount++;
+                        }
+                    }
+                });
+                renderSemesterTable();
+                alert(`CSV 讀取完畢，共成功配對 ${matchCount} 筆資料。\n請確認表格無誤後點擊「儲存段考成績」！`);
+                e.target.value = ''; 
+            };
+            reader.readAsText(file);
+        }
+
+        // =====================================
+        // 原有程式碼保持不變
+        // =====================================
         function updateDashboardStats() {
             let statsHTML = "";
             if (currentMode === 'attendance') {
@@ -452,7 +885,9 @@
                             if (st.comment && st.comment.includes('[❗通報]')) {
                                 st.isFlagged = true;
                                 st.comment = st.comment.replace('[❗通報] ', '').replace('[❗通報]', '');
-                            } else { st.isFlagged = false; }
+                            } else {
+                                st.isFlagged = false;
+                            }
                         });
                     }
 
@@ -522,86 +957,82 @@
             document.getElementById('tableHeader').appendChild(tr);
         }
 
-        function applyBatchAssign() { 
-            if (currentMode !== 'submission') return; 
-            const input = document.getElementById('batch-assign-input').value.trim(); 
-            if (!input) { 
-                studentData.forEach(st => { if (st.status === 'exempt') { st.status = 'pending'; st.isSaved = false; } }); 
-                renderTable(false); return alert('已重置為「全班皆須繳交」。'); 
-            } 
-            let targetSeats = new Set(); 
-            input.split(',').forEach(p => { 
-                p = p.trim(); 
-                if (p.includes('-')) { 
-                    let range = p.split('-'); let start = parseInt(range[0]), end = parseInt(range[1]); 
-                    if (!isNaN(start) && !isNaN(end)) for(let i=start; i<=end; i++) targetSeats.add(i.toString()); 
-                } else { 
-                    let seat = parseInt(p); if (!isNaN(seat)) targetSeats.add(seat.toString()); 
-                } 
-            }); 
-            let count = 0; 
-            studentData.forEach((st, index) => { 
-                let seat1 = st.studentId.toString(); let seat2 = parseInt(seat1.slice(-2)).toString(); 
-                let seat3 = parseInt(seat1).toString(); let seat4 = (index + 1).toString(); 
-                if (targetSeats.has(seat1) || targetSeats.has(seat2) || targetSeats.has(seat3) || targetSeats.has(seat4)) { 
-                    if (st.status === 'exempt' || !st.status) st.status = 'pending'; count++; 
-                } else { st.status = 'exempt'; } 
-                st.isSaved = false; 
-            }); 
-            renderTable(false); 
-            alert(`✅ 成功指派給 ${count} 位學生，其餘已自動設為「免交」。\n請確認無誤後點擊最下方【儲存】！`); 
+        function renderTable(isReadOnly = false) {
+            const tbody = document.getElementById('studentTableBody');
+            tbody.innerHTML = '';
+            updateDashboardStats(); 
+            
+            if(studentData.length === 0) return tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">此班級無資料</td></tr>';
+            
+            studentData.forEach((st, i) => {
+                const disabled = (st.isSaved || isReadOnly) ? 'disabled' : '';
+                const rowClass = st.isSaved ? 'bg-gray-100' : 'bg-white';
+                let actionBtn = '';
+                if (isReadOnly) {
+                    actionBtn = `<i class="fas fa-lock text-gray-300"></i>`;
+                } else {
+                    actionBtn = st.isSaved ? `<button onclick="toggleEdit(${i})" class="text-gray-500 hover:text-blue-600 px-3 py-1"><i class="fas fa-pencil-alt"></i></button>` : `<button class="text-blue-400 px-3 py-1 cursor-default"><i class="fas fa-pen"></i></button>`;
+                }
+                
+                let tr = document.createElement('tr');
+                if (st.attendance === 'leave' && !st.isSaved) tr.className = `bg-blue-50 transition`;
+                else if (currentMode === 'submission' && (st.status === 'exempt' || st.status === 'leave')) tr.className = `bg-gray-50 opacity-70 transition`;
+                else tr.className = `hover:bg-blue-50 transition ${rowClass}`;
+                
+                let html = `<td class="p-4 text-sm font-mono">${st.studentId}</td><td class="p-4 text-sm font-bold min-w-[80px]">${st.name}</td>`;
+                
+                if (currentMode === 'attendance') {
+                    let sClass = st.attendance === 'leave' ? 'w-full border rounded p-1 text-sm font-bold text-blue-600' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
+                    let starColor = st.isFlagged ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400';
+                    html += `<td class="p-4">
+                                <select id="att-${i}" onchange="syncAndRender()" class="${sClass}" ${disabled}>
+                                    <option value="present" ${st.attendance === 'present' ? 'selected' : ''}>✅ 正常</option>
+                                    <option value="late" ${st.attendance === 'late' ? 'selected' : ''}>⚠️ 遲到</option>
+                                    <option value="absent" ${st.attendance === 'absent' ? 'selected' : ''}>❌ 缺席</option>
+                                    <option value="leave" ${st.attendance === 'leave' ? 'selected' : ''}>🛌 請假</option>
+                                </select>
+                             </td>
+                             <td class="p-4">
+                                 <div class="flex items-center gap-2">
+                                     <button onclick="toggleFlag(${i})" class="${starColor} transition outline-none text-lg" title="${st.isFlagged ? '取消通報' : '標記通報導師'}" ${isReadOnly ? 'disabled' : ''}><i class="fas fa-star"></i></button>
+                                     <input type="text" id="com-${i}" onchange="syncData()" value="${st.comment}" placeholder="輸入評語" class="w-full border rounded p-1 text-sm min-w-[120px] focus:ring-2 focus:ring-blue-400 outline-none" ${disabled}>
+                                 </div>
+                             </td>`;
+                } else if (currentMode === 'submission') {
+                    let sStatus = st.status || 'pending';
+                    if (isReadOnly) {
+                        let badgeText = sStatus==='done'?'已交':(sStatus==='pending'?'未交':(sStatus==='exempt'?'免交':(sStatus==='leave'?'請假':'缺交')));
+                        let badgeColor = sStatus==='done'?'bg-green-100 text-green-700':(sStatus==='pending'?'bg-yellow-100 text-yellow-700':(sStatus==='exempt'?'bg-gray-100 text-gray-500':(sStatus==='leave'?'bg-blue-100 text-blue-700':'bg-red-100 text-red-700')));
+                        html += `<td class="p-4"><span class="${badgeColor} px-2 py-1 text-xs font-bold rounded">${badgeText}</span></td>`;
+                    } else {
+                        let sClass = (sStatus === 'exempt' || sStatus === 'leave') ? 'w-full border rounded p-1 text-sm text-gray-500' : 'w-full border rounded p-1 text-sm focus:border-blue-500';
+                        html += `<td class="p-4">
+                                    <select id="sub-${i}" onchange="syncAndRender()" class="${sClass}" ${disabled}>
+                                        <option value="done" ${sStatus === 'done' ? 'selected' : ''}>✅ 已交</option>
+                                        <option value="pending" ${sStatus === 'pending' ? 'selected' : ''}>⚠️ 未交</option>
+                                        <option value="missing" ${sStatus === 'missing' ? 'selected' : ''}>❌ 缺交</option>
+                                        <option value="exempt" ${sStatus === 'exempt' ? 'selected' : ''}>🚫 免交</option>
+                                        <option value="leave" ${sStatus === 'leave' ? 'selected' : ''}>🛌 請假</option>
+                                    </select>
+                                 </td>`;
+                    }
+                } else {
+                    html += `<td class="p-4"><input type="number" id="sco-${i}" oninput="syncData(); updateDashboardStats();" value="${st.score}" placeholder="分數" min="0" max="100" class="w-full border rounded p-1 text-sm" ${disabled}></td>`;
+                }
+                html += `<td class="p-4 text-center">${actionBtn}</td>`;
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
         }
 
-        function quickFill() { if (currentMode !== 'attendance') return; studentData.forEach(st => { if (!st.isSaved && st.attendance !== 'leave') { st.attendance = 'present'; st.isSaved = false; } }); renderTable(false); }
-        function quickDone() { if (currentMode !== 'submission') return; studentData.forEach(st => { if (!st.isSaved && st.status !== 'exempt' && st.status !== 'leave') { st.status = 'done'; st.isSaved = false; } }); renderTable(false); }
-        
-        async function batchSave() { 
-            const records = []; 
-            const date = datePicker.value, className = classSelect.value, subject = subjectSelect.value, examName = examNameInput.value; 
-            for(let st of studentData) { 
-                if (!st.isSaved) { 
-                    if (currentMode === 'score' && st.score !== "") { 
-                        let s = parseFloat(st.score); if (isNaN(s) || s < 0 || s > 100) return alert(`⚠️ 學號 ${st.studentId} 的分數格式錯誤`); 
-                    } 
-                    let rec = { date, className, studentId: st.studentId, name: st.name }; 
-                    if (currentMode === 'attendance') { 
-                        rec.subject = subject; rec.attendance = st.attendance; 
-                        let c = (st.comment || "").trim(); rec.comment = st.isFlagged ? `[❗通報] ${c}`.trim() : c; 
-                    } else if (currentMode === 'submission') { 
-                        rec.itemName = examName; rec.status = st.status; rec.creatorName = myCreatorName; 
-                    } else { 
-                        rec.subject = subject; rec.examName = examName; rec.score = st.score; 
-                    } 
-                    records.push(rec); 
-                } 
-            } 
-            if (records.length === 0) return alert('沒有變更！'); 
-            const btn = document.getElementById('batch-save-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`; btn.disabled = true; 
-            try { 
-                let action = currentMode === 'attendance' ? 'batchSaveAttendance' : (currentMode === 'score' ? 'batchSaveScores' : 'batchSaveSubmissions'); 
-                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, records }) }); 
-                const result = await response.json(); 
-                if (result.success) { 
-                    studentData.forEach(st => st.isSaved = true); 
-                    if (currentMode === 'score' || currentMode === 'submission') fetchExistingItems(); 
-                    renderTable(); 
-                    alert('🎉 儲存成功！'); 
-                } else alert('❌ 失敗：' + result.message); 
-            } catch (error) { alert('連線異常。'); } 
-            btn.innerHTML = `<i class="fas fa-bolt mr-2"></i> 極速一鍵儲存`; btn.disabled = false; 
-        }
-
-        // ==========================================
-        // 段考與其他功能模組 (保持不變)
-        // ==========================================
-        let currentSemesterData = []; let currentPublishStatus = false;
-        async function loadSemesterData() { const examName = document.getElementById('se-exam-select').value; const btn = document.getElementById('se-load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> 載入中`; btn.disabled = true; document.getElementById('se-tbody').innerHTML = '<tr><td colspan="11" class="text-center py-8 text-gray-400">連線讀取中...</td></tr>'; document.getElementById('se-save-btn').classList.add('hidden'); document.getElementById('se-tfoot').classList.add('hidden'); document.getElementById('se-publish-container').classList.add('hidden'); try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'loadSemesterExams', className: homeroomClass, examName: examName }) }); const result = await response.json(); if (result.success) { currentSemesterData = result.data; currentPublishStatus = (result.isPublished === true); document.getElementById('se-publish-toggle').checked = currentPublishStatus; updatePublishText(); renderSemesterTable(); document.getElementById('se-save-btn').classList.remove('hidden'); document.getElementById('se-publish-container').classList.remove('hidden'); } else { alert('載入失敗：' + result.message); } } catch (error) { alert('連線異常。'); } finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入名單`; btn.disabled = false; } }
-        function updatePublishText() { const isChecked = document.getElementById('se-publish-toggle').checked; currentPublishStatus = isChecked; const textEl = document.getElementById('se-publish-text'); textEl.innerText = isChecked ? '已開放' : '已隱藏'; textEl.className = isChecked ? 'ml-3 text-sm font-bold text-green-600' : 'ml-3 text-sm font-medium text-gray-500'; }
-        function renderSemesterTable() { const tbody = document.getElementById('se-tbody'); const tfoot = document.getElementById('se-tfoot'); tbody.innerHTML = ''; const subjects = [ { key: 'chi', weight: 5 }, { key: 'eng', weight: 3 }, { key: 'math', weight: 4 }, { key: 'soc', weight: 3 }, { key: 'sci', weight: 3 } ]; const TOTAL_WEIGHT = 18; let validCount = 0; let sumSubj = { chi: 0, eng: 0, math: 0, soc: 0, sci: 0 }; let cntSubj = { chi: 0, eng: 0, math: 0, soc: 0, sci: 0 }; currentSemesterData.forEach(st => { let hasData = false; let weightedTotal = 0; subjects.forEach(sub => { let score = parseFloat(st.scores[sub.key]); if (!isNaN(score)) { weightedTotal += (score * sub.weight); sumSubj[sub.key] += score; cntSubj[sub.key]++; hasData = true; } }); if (hasData) { st.wTotal = weightedTotal; st.wAvg = parseFloat((weightedTotal / TOTAL_WEIGHT).toFixed(2)); validCount++; } else { st.wTotal = null; st.wAvg = null; st.rank = '--'; } }); let rankList = [...currentSemesterData].filter(s => s.wAvg !== null).sort((a, b) => b.wAvg - a.wAvg); let currentRank = 1; rankList.forEach((st, index) => { if (index > 0 && st.wAvg === rankList[index - 1].wAvg) { st.rank = rankList[index - 1].rank; } else { st.rank = currentRank; } currentRank++; currentSemesterData.find(s => s.studentId === st.studentId).rank = st.rank; }); currentSemesterData.forEach((st, idx) => { let tr = document.createElement('tr'); tr.className = "hover:bg-orange-50 transition border-b border-gray-100 bg-white"; let inputsHtml = ''; subjects.forEach(sub => { inputsHtml += `<td class="p-2"><input type="number" value="${st.scores[sub.key]}" min="0" max="100" onchange="updateSemesterScore(${idx}, '${sub.key}', this.value)" class="w-16 border rounded p-1 text-center text-sm focus:ring-2 focus:ring-orange-400 outline-none"></td>`; }); let wTotalDisp = st.wTotal !== null ? st.wTotal : '--'; let wAvgDisp = st.wAvg !== null ? st.wAvg : '--'; let sRankVal = st.scores.sRank || ""; tr.innerHTML = `<td class="p-3 font-mono text-sm text-gray-500 text-left">${st.studentId}</td><td class="p-3 font-bold text-gray-800 text-left">${st.name}</td>${inputsHtml}<td class="p-3 font-bold text-blue-700 bg-blue-50/30 border-l border-blue-50">${wTotalDisp}</td><td class="p-3 font-bold text-blue-700 bg-blue-50/30">${wAvgDisp}</td><td class="p-3 font-bold text-orange-600 bg-orange-50/30 border-l border-orange-50">${st.rank || '--'}</td><td class="p-2 bg-purple-50/30 border-l border-purple-50 text-center"><input type="text" value="${sRankVal}" onchange="updateSemesterSRank(${idx}, this.value)" placeholder="--" class="w-16 border border-purple-200 rounded p-1 text-center text-sm focus:ring-2 focus:ring-purple-400 outline-none"></td>`; tbody.appendChild(tr); }); let tfootHtml = `<tr><td colspan="2" class="p-3 text-right">各科班級平均：</td>`; subjects.forEach(sub => { let avg = cntSubj[sub.key] > 0 ? (sumSubj[sub.key] / cntSubj[sub.key]).toFixed(1) : '--'; tfootHtml += `<td class="p-3 text-center">${avg}</td>`; }); tfootHtml += `<td colspan="4"></td></tr>`; tfoot.innerHTML = tfootHtml; tfoot.classList.remove('hidden'); }
-        function updateSemesterScore(idx, subjectKey, val) { currentSemesterData[idx].scores[subjectKey] = val.trim(); renderSemesterTable(); }
-        function updateSemesterSRank(idx, val) { currentSemesterData[idx].scores.sRank = val.trim(); }
-        async function saveSemesterData() { const btn = document.getElementById('se-save-btn'); const examName = document.getElementById('se-exam-select').value; btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>儲存中...`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveSemesterExams', className: homeroomClass, examName: examName, records: currentSemesterData, isPublished: currentPublishStatus }) }); const result = await response.json(); alert(result.message); } catch (error) { alert('連線異常，儲存失敗'); } finally { btn.innerHTML = `<i class="fas fa-save mr-2"></i> 儲存段考成績`; btn.disabled = false; } }
-        function processSemesterCSV(e) { const file = e.target.files[0]; if (!file) return; if (currentSemesterData.length === 0) return alert("請先點擊「載入名單」取得本班學生列表後再匯入"); const reader = new FileReader(); reader.onload = function(event) { const text = event.target.result; const rows = text.split('\n'); let matchCount = 0; rows.forEach(row => { const cols = row.trim().split(','); if (cols.length >= 6) { const sId = cols[0].trim(); const targetSt = currentSemesterData.find(s => s.studentId === sId); if (targetSt) { targetSt.scores.chi = cols[1].trim() !== "" ? parseFloat(cols[1].trim()) : ""; targetSt.scores.eng = cols[2].trim() !== "" ? parseFloat(cols[2].trim()) : ""; targetSt.scores.math = cols[3].trim() !== "" ? parseFloat(cols[3].trim()) : ""; targetSt.scores.soc = cols[4].trim() !== "" ? parseFloat(cols[4].trim()) : ""; targetSt.scores.sci = cols[5].trim() !== "" ? parseFloat(cols[5].trim()) : ""; if(cols.length >= 7) targetSt.scores.sRank = cols[6].trim(); matchCount++; } } }); renderSemesterTable(); alert(`CSV 讀取完畢，共成功配對 ${matchCount} 筆資料。\n請確認表格無誤後點擊「儲存段考成績」！`); e.target.value = ''; }; reader.readAsText(file); }
+        function toggleFlag(index) { syncData(); if (studentData[index].isSaved) studentData[index].isSaved = false; studentData[index].isFlagged = !studentData[index].isFlagged; renderTable(); }
+        function toggleEdit(index) { syncData(); studentData[index].isSaved = false; renderTable(); }
+        function syncAndRender() { syncData(); renderTable(); }
+        function syncData() { studentData.forEach((st, i) => { if (!st.isSaved) { if (currentMode === 'attendance') { let attEl = document.getElementById(`att-${i}`); let comEl = document.getElementById(`com-${i}`); if(attEl) st.attendance = attEl.value; if(comEl) st.comment = comEl.value; } else if (currentMode === 'submission') { let subEl = document.getElementById(`sub-${i}`); if(subEl) st.status = subEl.value; } else { let scoEl = document.getElementById(`sco-${i}`); if(scoEl) st.score = scoEl.value; } } }); }
+        function applyBatchAssign() { syncData(); if (currentMode !== 'submission') return; const input = document.getElementById('batch-assign-input').value.trim(); if (!input) { studentData.forEach(st => { if (st.status === 'exempt') { st.status = 'pending'; st.isSaved = false; } }); renderTable(false); return alert('已重置為「全班皆須繳交」。'); } let targetSeats = new Set(); input.split(',').forEach(p => { p = p.trim(); if (p.includes('-')) { let range = p.split('-'); let start = parseInt(range[0]), end = parseInt(range[1]); if (!isNaN(start) && !isNaN(end)) for(let i=start; i<=end; i++) targetSeats.add(i.toString()); } else { let seat = parseInt(p); if (!isNaN(seat)) targetSeats.add(seat.toString()); } }); let count = 0; studentData.forEach((st, index) => { let seat1 = st.studentId.toString(); let seat2 = parseInt(seat1.slice(-2)).toString(); let seat3 = parseInt(seat1).toString(); let seat4 = (index + 1).toString(); if (targetSeats.has(seat1) || targetSeats.has(seat2) || targetSeats.has(seat3) || targetSeats.has(seat4)) { if (st.status === 'exempt' || !st.status) st.status = 'pending'; count++; } else { st.status = 'exempt'; } st.isSaved = false; }); renderTable(false); alert(`✅ 成功指派給 ${count} 位學生，其餘已自動設為「免交」。\n請確認無誤後點擊最下方【儲存】！`); }
+        function quickFill() { syncData(); if (currentMode !== 'attendance') return; studentData.forEach(st => { if (!st.isSaved && st.attendance !== 'leave') { st.attendance = 'present'; } }); renderTable(false); }
+        function quickDone() { syncData(); if (currentMode !== 'submission') return; studentData.forEach(st => { if (!st.isSaved && st.status !== 'exempt' && st.status !== 'leave') { st.status = 'done'; } }); renderTable(false); }
+        async function batchSave() { syncData(); const records = []; const date = datePicker.value, className = classSelect.value, subject = subjectSelect.value, examName = examNameInput.value; for(let st of studentData) { if (!st.isSaved) { if (currentMode === 'score' && st.score !== "") { let s = parseFloat(st.score); if (isNaN(s) || s < 0 || s > 100) return alert(`⚠️ 學號 ${st.studentId} 的分數格式錯誤`); } let rec = { date, className, studentId: st.studentId, name: st.name }; if (currentMode === 'attendance') { rec.subject = subject; rec.attendance = st.attendance; let c = st.comment.trim(); rec.comment = st.isFlagged ? `[❗通報] ${c}`.trim() : c; } else if (currentMode === 'submission') { rec.itemName = examName; rec.status = st.status; rec.creatorName = myCreatorName; } else { rec.subject = subject; rec.examName = examName; rec.score = st.score; } records.push(rec); } } if (records.length === 0) return alert('沒有變更！'); const btn = document.getElementById('batch-save-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`; btn.disabled = true; try { let action = currentMode === 'attendance' ? 'batchSaveAttendance' : (currentMode === 'score' ? 'batchSaveScores' : 'batchSaveSubmissions'); const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, records }) }); const result = await response.json(); if (result.success) { studentData.forEach(st => st.isSaved = true); if (currentMode === 'score' || currentMode === 'submission') fetchExistingItems(); renderTable(); alert('🎉 儲存成功！'); } else alert('❌ 失敗：' + result.message); } catch (error) { alert('連線異常。'); } btn.innerHTML = `<i class="fas fa-bolt mr-2"></i> 極速一鍵儲存`; btn.disabled = false; }
         async function deleteCurrentTask() { let actionName = ''; let payload = {}; let confirmMsg = ''; let successMsg = ''; if (currentMode === 'submission') { const itemName = examNameInput.value.trim(); if (!itemName) return; confirmMsg = `⚠️ 嚴重警告：\n\n確定要徹底刪除「${itemName}」的所有繳交紀錄嗎？\n此動作無法復原！`; successMsg = `✅ 「${itemName}」紀錄已成功刪除！`; actionName = 'deleteSubmissionTask'; payload = { action: actionName, date: datePicker.value, className: classSelect.value, itemName: itemName }; } else if (currentMode === 'score') { const subject = subjectSelect.value; const examName = examNameInput.value.trim(); if (!subject || !examName) return; confirmMsg = `⚠️ 嚴重警告：\n\n確定要徹底刪除「${subject} - ${examName}」的全班成績嗎？\n此動作無法復原！`; successMsg = `✅ 「${subject} - ${examName}」成績已成功刪除！`; actionName = 'deleteExamTask'; payload = { action: actionName, date: datePicker.value, className: classSelect.value, subject: subject, examName: examName }; } else { return; } if (!confirm(confirmMsg)) return; const btn = document.getElementById('delete-task-btn'); const originalText = btn.innerHTML; btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>刪除中...`; btn.disabled = true; try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); const result = await response.json(); if (result.success) { alert(successMsg); examNameInput.value = ''; resetTableState(); fetchExistingItems(); } else { alert('❌ 刪除失敗：' + result.message); } } catch (error) { alert('連線異常，請稍後再試。'); } finally { btn.innerHTML = originalText; btn.disabled = false; } }
         async function loadHomeroomOverview() { const btn = document.getElementById('load-btn'); btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>載入中...`; btn.disabled = true; const range = document.getElementById('hr-time-range') ? document.getElementById('hr-time-range').value : 'day'; ['hr-attendance-list', 'hr-submission-list', 'hr-routine-list', 'hr-leave-list', 'hr-score-list'].forEach(id => { let el = document.getElementById(id); if(el) el.innerHTML = '<div class="text-center py-4 text-gray-400"><i class="fas fa-circle-notch fa-spin text-xl mb-2"></i><p class="text-xs font-bold">資料分析中...</p></div>'; }); try { const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'getHomeroomOverview', date: datePicker.value, className: homeroomClass, range: range }) }); const result = await response.json(); if (result.success) { renderHomeroom(result.data, range !== 'day'); } else { alert('載入失敗：' + result.message); } } catch(e) { console.error(e); alert('網路連線異常，無法載入導師儀表板！'); } finally { btn.innerHTML = `<i class="fas fa-cloud-download-alt mr-1"></i> 載入資料`; btn.disabled = false; } }
         function renderHomeroom(data, showDate) { const attList = document.getElementById('hr-attendance-list'); if (!data.abnormalAttendance || data.abnormalAttendance.length === 0) { attList.innerHTML = '<div class="bg-gray-50 text-gray-400 p-4 rounded-lg text-center font-bold border border-gray-200"><i class="fas fa-check-circle text-2xl mb-1 block text-green-300"></i>無異常或通報</div>'; } else { let html = ''; data.abnormalAttendance.forEach(a => { let badge = ''; if (a.status === 'absent') badge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold border border-red-200">缺席</span>'; else if (a.status === 'late') badge = '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold border border-yellow-200">遲到</span>'; else if (a.status === 'leave') badge = '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold border border-blue-200">請假</span>'; else badge = '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold border border-green-200">正常</span>'; let dateStr = showDate && a.date ? `<span class="text-xs text-indigo-500 font-bold mr-1">[${a.date.split('-')[1]}/${a.date.split('-')[2]}]</span>` : ''; let commentHtml = ''; if (a.comment) { let isFlagged = a.comment.includes('[❗通報]'); let cleanComment = a.comment.replace('[❗通報] ', '').replace('[❗通報]', '').trim(); if (isFlagged) commentHtml = `<div class="mt-2 text-xs text-red-800 bg-red-50 p-2 rounded border border-red-200 shadow-sm"><i class="fas fa-exclamation-circle text-red-600 mr-1"></i><span class="font-black text-red-700">通報：</span>${cleanComment}</div>`; else if (cleanComment) commentHtml = `<div class="mt-2 text-xs text-indigo-800 bg-indigo-50 p-2 rounded border border-indigo-100 shadow-sm"><i class="fas fa-comment-dots text-indigo-500 mr-1"></i><span class="font-bold text-indigo-700">評語：</span>${cleanComment}</div>`; } html += `<div class="border-b border-gray-100 pb-3 mb-3 last:border-0 last:mb-0 last:pb-0"><div class="flex justify-between items-center"><div class="font-bold text-gray-700">${dateStr}<span class="text-gray-400 mr-1 text-xs">${a.studentId}</span>${a.name} <span class="text-gray-400 text-[10px] ml-1 bg-gray-50 px-1 rounded">${a.subject}</span></div>${badge}</div>${commentHtml}</div>`; }); attList.innerHTML = html; } const subList = document.getElementById('hr-submission-list'); if (!data.missingSubmissions || data.missingSubmissions.length === 0) { subList.innerHTML = '<div class="bg-gray-50 text-gray-400 p-4 rounded-lg text-center font-bold border border-gray-200"><i class="fas fa-clipboard-check text-2xl mb-1 block text-green-300"></i>作業皆已繳交</div>'; } else { let html = ''; data.missingSubmissions.forEach(s => { let badge = s.status === 'missing' ? '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200">缺交</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold border border-yellow-200">未交</span>'; let dateInfo = s.date !== document.getElementById('datePicker').value ? `<div class="text-[10px] text-red-500 bg-red-50 px-1 rounded border border-red-100 inline-block mt-0.5">自 ${s.date} 欠交</div>` : ''; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-3 last:border-0 last:mb-0 last:pb-0"><div><div class="font-bold text-gray-800"><span class="text-gray-400 mr-1 text-xs">${s.studentId}</span>${s.name}</div><div class="text-xs font-bold text-indigo-600 mt-1">${s.itemName} ${dateInfo}</div></div>${badge}</div>`; }); subList.innerHTML = html; } const routineList = document.getElementById('hr-routine-list'); if (!data.dailyRoutines || data.dailyRoutines.length === 0) { routineList.innerHTML = '<div class="bg-gray-50 text-gray-400 p-4 rounded-lg text-center font-bold border border-gray-200"><i class="fas fa-medal text-2xl mb-1 block text-purple-300"></i>常規表現良好</div>'; } else { let html = ''; data.dailyRoutines.forEach(r => { let badgeText = ''; let badgeColor = ''; let isHyg = r.itemName.includes('打掃'); if (r.status === 'missing') { badgeText = isHyg ? '未打掃' : '缺交'; badgeColor = 'bg-red-100 text-red-700 border-red-200'; } else if (r.status === 'none') { badgeText = '未帶'; badgeColor = 'bg-gray-100 text-gray-600 border-gray-200'; } else { badgeText = isHyg ? '待加強' : '未交'; badgeColor = 'bg-yellow-100 text-yellow-700 border-yellow-200'; } let dateStr = showDate && r.date ? `<span class="text-[10px] text-purple-500 font-bold mr-1">[${r.date.split('-')[1]}/${r.date.split('-')[2]}]</span>` : ''; html += `<div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-3 last:border-0 last:mb-0 last:pb-0"><div><div class="font-bold text-gray-800">${dateStr}<span class="text-gray-400 mr-1 text-xs">${r.studentId}</span>${r.name}</div><div class="text-xs text-purple-600 mt-0.5">${r.itemName}</div></div><span class="${badgeColor} px-2 py-0.5 rounded text-[10px] font-bold border">${badgeText}</span></div>`; }); routineList.innerHTML = html; } const leaveList = document.getElementById('hr-leave-list'); if (!data.leaveRequests || data.leaveRequests.length === 0) { leaveList.innerHTML = '<div class="bg-gray-50 text-gray-400 p-4 rounded-lg text-center font-bold border border-gray-200"><i class="fas fa-bed text-2xl mb-1 block text-blue-200"></i>此區間無請假</div>'; } else { let html = ''; data.leaveRequests.forEach(l => { let dateStr = showDate && l.date ? `<span class="text-xs text-blue-500 font-bold mr-1">[${l.date.split('-')[1]}/${l.date.split('-')[2]}]</span>` : ''; html += `<div class="border-b border-gray-100 pb-3 mb-3 last:border-0 last:mb-0 last:pb-0"><div class="flex justify-between items-center mb-1"><div class="font-bold text-gray-800">${dateStr}<span class="text-gray-400 mr-1 text-xs">${l.studentId}</span>${l.name}</div><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-200">${l.type}</span></div><div class="text-xs text-gray-500">事由：${l.reason}</div></div>`; }); leaveList.innerHTML = html; } const scoreList = document.getElementById('hr-score-list'); if (!data.dailyScores || data.dailyScores.length === 0) { scoreList.innerHTML = '<div class="bg-gray-50 text-gray-400 p-4 rounded-lg text-center font-bold border border-gray-200"><i class="fas fa-file-signature text-2xl mb-1 block text-green-300"></i>此區間無成績紀錄</div>'; } else { let html = ''; data.dailyScores.forEach(sc => { let dateStr = showDate && sc.date ? `<span class="text-xs text-green-600 font-bold mr-2 bg-green-50 px-1 rounded border border-green-100">${sc.date.split('-')[1]}/${sc.date.split('-')[2]}</span>` : ''; let failHtml = ''; if (sc.fails && sc.fails.length > 0) { let failNames = sc.fails.map(f => `${f.name}(${f.score})`).join('、'); failHtml = `<div class="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded-lg border border-red-100"><span class="font-bold">不及格：</span>${failNames}</div>`; } else { failHtml = `<div class="mt-2 text-xs text-green-600 bg-green-50 p-1.5 rounded border border-green-100 font-bold"><i class="fas fa-check-circle mr-1"></i>全班及格</div>`; } html += `<div class="border-b border-gray-100 pb-4 mb-4 last:border-0 last:mb-0 last:pb-0"><div class="flex justify-between items-center"><div class="font-bold text-gray-800 text-sm">${dateStr}<span class="text-green-700 mr-1">[${sc.subject}]</span>${sc.examName}</div><span class="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">均分 ${sc.avg}</span></div>${failHtml}</div>`; }); scoreList.innerHTML = html; } }
