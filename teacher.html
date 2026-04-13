@@ -531,22 +531,22 @@
                     `${result.config.startDate} ～ ${result.config.endDate}`;
                 document.getElementById('weekly-export-btn').classList.remove('hidden');
 
-                const subjectList = result.subjectList;
-                const subjectExamMap = result.subjectExamMap;
+                const colKeySet  = result.colKeySet;
+                const colKeyMeta = result.colKeyMeta;
 
-                if (subjectList.length === 0) {
+                if (colKeySet.length === 0) {
                     head.innerHTML = '';
                     body.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">此日期範圍內尚無任何成績紀錄</td></tr>';
                     return;
                 }
 
-                // 表頭：學號 | 姓名 | 各科（考試名稱） | 加權總分 | 加權平均 | 班排
+                // 表頭：學號 | 姓名 | 各欄(科目+考試名稱) | 加權總分 | 加權平均 | 班排
                 let thHtml = '<tr class="text-sm">';
                 thHtml += '<th class="p-3 font-bold text-left w-20">學號</th>';
                 thHtml += '<th class="p-3 font-bold text-left w-24">姓名</th>';
-                subjectList.forEach(subj => {
-                    let examLabel = subjectExamMap[subj] ? `<br><span class="text-[10px] text-gray-400 font-normal">${subjectExamMap[subj]}</span>` : '';
-                    thHtml += `<th class="p-3 font-bold">${subj}${examLabel}</th>`;
+                colKeySet.forEach(k => {
+                    let meta = colKeyMeta[k];
+                    thHtml += `<th class="p-3 font-bold">${meta.subject}<br><span class="text-[10px] text-gray-400 font-normal">${meta.examName}</span></th>`;
                 });
                 thHtml += '<th class="p-3 font-bold text-blue-700 bg-blue-50 border-l border-blue-100">加權總分</th>';
                 thHtml += '<th class="p-3 font-bold text-blue-700 bg-blue-50">加權平均</th>';
@@ -557,19 +557,18 @@
                 // 表身
                 let tbHtml = '';
                 result.data.forEach(st => {
-                    let rowBg = 'bg-white';
-                    tbHtml += `<tr class="hover:bg-green-50 transition ${rowBg}">`;
+                    tbHtml += `<tr class="hover:bg-green-50 transition bg-white">`;
                     tbHtml += `<td class="p-3 text-sm font-mono text-gray-500 text-left">${st.studentId}</td>`;
                     tbHtml += `<td class="p-3 font-bold text-gray-800 text-left">${st.name}</td>`;
-                    subjectList.forEach(subj => {
-                        let rec = st.subjectScores[subj];
-                        let scoreDisp = rec ? rec.score : '--';
-                        let scoreClass = (rec && rec.score < 60) ? 'text-red-600 font-bold' : 'text-gray-700';
+                    colKeySet.forEach(k => {
+                        let score = st.colScores[k];
+                        let scoreDisp = score !== null && score !== undefined ? score : '--';
+                        let scoreClass = (score !== null && score < 60) ? 'text-red-600 font-bold' : 'text-gray-700';
                         tbHtml += `<td class="p-3 text-sm ${scoreClass}">${scoreDisp}</td>`;
                     });
                     let wTotalDisp = st.wTotal !== null ? st.wTotal : '--';
-                    let wAvgDisp = st.wAvg !== null ? st.wAvg : '--';
-                    let rankDisp = st.rank !== null ? st.rank : '--';
+                    let wAvgDisp   = st.wAvg   !== null ? st.wAvg   : '--';
+                    let rankDisp   = st.rank   !== null ? st.rank   : '--';
                     tbHtml += `<td class="p-3 font-bold text-blue-700 bg-blue-50/30 border-l border-blue-50">${wTotalDisp}</td>`;
                     tbHtml += `<td class="p-3 font-bold text-blue-700 bg-blue-50/30">${wAvgDisp}</td>`;
                     tbHtml += `<td class="p-3 font-bold text-orange-600 bg-orange-50/30 border-l border-orange-50">${rankDisp}</td>`;
@@ -585,27 +584,27 @@
         function exportWeeklyCSV() {
             if (!weeklyResultData || !weeklyResultData.success) return alert('請先載入週考成績！');
             const result = weeklyResultData;
-            const subjectList = result.subjectList;
-            const subjectExamMap = result.subjectExamMap;
+            const colKeySet  = result.colKeySet;
+            const colKeyMeta = result.colKeyMeta;
 
-            // 表頭
+            // 表頭：每欄顯示「科目(考試名稱)」
             let csvHeader = '學號,姓名,' +
-                subjectList.map(s => `"${s}(${subjectExamMap[s] || s})"`).join(',') +
+                colKeySet.map(k => `"${colKeyMeta[k].subject}(${colKeyMeta[k].examName})"`).join(',') +
                 ',加權總分,加權平均,班排\n';
 
             // 資料列
             let csvRows = result.data.map(st => {
-                let scores = subjectList.map(subj => {
-                    let rec = st.subjectScores[subj];
-                    return rec ? rec.score : '';
+                let scores = colKeySet.map(k => {
+                    let score = st.colScores[k];
+                    return score !== null && score !== undefined ? score : '';
                 });
                 return [
                     st.studentId,
                     `"${st.name}"`,
                     ...scores,
                     st.wTotal !== null ? st.wTotal : '',
-                    st.wAvg !== null ? st.wAvg : '',
-                    st.rank !== null ? st.rank : ''
+                    st.wAvg   !== null ? st.wAvg   : '',
+                    st.rank   !== null ? st.rank   : ''
                 ].join(',');
             }).join('\n');
 
